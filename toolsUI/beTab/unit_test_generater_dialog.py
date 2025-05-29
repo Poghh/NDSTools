@@ -1,6 +1,7 @@
 import tkinter as tk
 from tkinter import scrolledtext, ttk, messagebox
 import json
+import re
 
 
 class UnitTestDialog(tk.Toplevel):
@@ -84,6 +85,13 @@ def beautify_json(json_text_widget):
         messagebox.showerror("Lỗi", f"JSON không hợp lệ:\n{str(e)}")
 
 
+def extract_gui(screen_code: str):
+    if "_" in screen_code:
+        return screen_code.split("_")[0]
+    else:
+        return screen_code.strip()
+
+
 def create_unit_test_method(screen_code, service_name, endpoint, json_raw):
     method_name = (
         "test" + screen_code + "".join(x.capitalize() for x in service_name.split("_"))
@@ -91,9 +99,15 @@ def create_unit_test_method(screen_code, service_name, endpoint, json_raw):
     log_label = (
         f"{screen_code} {''.join(x.capitalize() for x in service_name.split('_'))}"
     )
+    method_comment = screen_code
+    method_name = (
+        "test" + screen_code + "".join(x.capitalize() for x in service_name.split("_"))
+    )
+    log_label = (
+        f"{screen_code} {''.join(x.capitalize() for x in service_name.split('_'))}"
+    )
     endpoint_url = f"/cmn/{endpoint}"
-    method_comment = f"{screen_code}_課題分析"
-    class_name = screen_code + "Tests"
+    class_name = extract_gui(screen_code) + "Tests"
 
     try:
         json_obj = json.loads(json_raw)
