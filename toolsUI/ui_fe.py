@@ -92,6 +92,8 @@ class FrontEndTab:
 
         btn_width = 20
 
+
+        # row 0
         self.run_button = tk.Button(
             btn_frame, text="🚀 Run ESLint", width=btn_width, command=self.on_run_eslint)
         self.run_button.grid(row=0, column=0, padx=10, pady=5)
@@ -112,34 +114,36 @@ class FrontEndTab:
             btn_frame, text="🛑 Check Console", width=btn_width, command=self.on_check_console)
         self.check_console_button.grid(row=0, column=4, padx=10, pady=5)
 
-        self.check_jsdoc_button = tk.Button(
-            btn_frame, text="📘 Check JSDoc", width=btn_width, command=self.on_check_jsdoc)
-        self.check_jsdoc_button.grid(row=1, column=0, padx=10, pady=5)
-
-        self.check_vue_order_button = tk.Button(
-            btn_frame, text="⚡ Check Vue", width=btn_width, command=self.on_check_vue_order)
-        self.check_vue_order_button.grid(row=1, column=1, padx=10, pady=5)
-
+        # row 1
         self.check_english_comments_button = tk.Button(
             btn_frame, text="🔤 Check Eng Cmt", width=btn_width, command=self.on_check_english_comments)
         self.check_english_comments_button.grid(
-            row=1, column=2, padx=10, pady=5)
+            row=1, column=0, padx=10, pady=5)
 
         self.check_hardcode_values_button = tk.Button(
             btn_frame, text="🔒 Check Values", width=btn_width, command=self.on_check_hardcode_values)
         self.check_hardcode_values_button.grid(
-            row=1, column=3, padx=10, pady=5)
+            row=1, column=1, padx=10, pady=5)
 
         self.count_button = tk.Button(
             btn_frame, text="🧮 Count Lines", width=btn_width, command=self.on_count_lines)
-        self.count_button.grid(row=1, column=4, padx=10, pady=5)
+        self.count_button.grid(row=1, column=2, padx=10, pady=5)
+
+        # row 2
+        self.check_jsdoc_button = tk.Button(
+            btn_frame, text="📘 Check JSDoc", width=btn_width, command=self.on_check_jsdoc)
+        self.check_jsdoc_button.grid(row=2, column=0, padx=10, pady=5)
+
+        self.check_vue_order_button = tk.Button(
+            btn_frame, text="⚡ Check Vue", width=btn_width, command=self.on_check_vue_order)
+        self.check_vue_order_button.grid(row=2, column=1, padx=10, pady=5)
 
         self.clear_button = tk.Button(
             btn_frame, text="🔄 Clear All", width=btn_width, command=self.clear_all)
-        self.clear_button.grid(row=2, column=0, padx=10, pady=5)
-
+        self.clear_button.grid(row=2, column=2, padx=10, pady=5)
+        
         self.status_label = tk.Label(
-            self.root, text="", fg="blue", font=("Segoe UI", 10, "italic"))
+            self.root, text="", fg="blue", font=("Segoe UI", 12, "italic"))
         self.status_label.pack(pady=(0, 5))
 
         self.output_text = scrolledtext.ScrolledText(
@@ -147,17 +151,17 @@ class FrontEndTab:
         self.output_text.pack(expand=True, fill='both', padx=10, pady=10)
 
         self.output_text.tag_configure(
-            "error", foreground="red", font=("Consolas", 10, "bold"))
+            "error", foreground="red", font=("Consolas", 12, "bold"))
         self.output_text.tag_configure(
-            "highlight", foreground="blue", font=("Consolas", 10, "italic"))
+            "highlight", foreground="blue", font=("Consolas", 12, "italic"))
         self.output_text.tag_configure(
-            "warning", foreground="orange", font=("Consolas", 10, "italic"))
+            "warning", foreground="#FF6600", font=("Consolas", 12, "italic"))
         self.output_text.tag_configure(
-            "success", foreground="green", font=("Consolas", 10, "italic"))
+            "success", foreground="green", font=("Consolas", 12, "italic"))
         self.output_text.tag_configure(
-            "title-color", foreground="blue", font=("Consolas", 10, "bold"))
+            "title-color", foreground="blue", font=("Consolas", 12, "bold"))
         self.output_text.tag_configure(
-            "footer-color", foreground="gray", font=("Consolas", 10, "bold"))
+            "footer-color", foreground="gray", font=("Consolas", 12, "bold"))
 
     def handle_drop(self, event):
         try:
@@ -245,7 +249,7 @@ class FrontEndTab:
 
         # Tìm cột chứa "画面No."
         for col_idx, cell in enumerate(workbook.iloc[0]):
-            if str(cell).strip() == "画面No.":
+            if str(cell).strip() == "画面No." or str(cell).strip() == "画面No．" or "画面No" in str(cell).strip():
                 mark_gui = col_idx
                 break
 
@@ -300,38 +304,51 @@ class FrontEndTab:
             self.author_var.set(upper)
 
     def on_run_eslint(self):
+        self.output_text.delete("1.0", tk.END)
         threading.Thread(target=run_eslint, args=(self,)).start()
 
     def on_count_lines(self):
+        self.output_text.delete("1.0", tk.END)
         threading.Thread(target=count_lines, args=(self,)).start()
 
     def on_check_title_comment(self):
+        self.output_text.delete("1.0", tk.END)
         threading.Thread(target=check_title_comment, args=(self,)).start()
 
     def on_check_css_color(self):
+        self.output_text.delete("1.0", tk.END)
         threading.Thread(target=check_css_color_main, args=(self,)).start()
 
     def on_check_hardcode_jp(self):
+        self.output_text.delete("1.0", tk.END)
         threading.Thread(target=check_hardcode_jp, args=(self,)).start()
 
     def on_check_console(self):
+        self.output_text.delete("1.0", tk.END)
         threading.Thread(target=check_console_log, args=(self,)).start()
 
     def on_check_jsdoc(self):
-        threading.Thread(target=check_jsdoc, args=(self,)).start()
+        # threading.Thread(target=check_jsdoc, args=(self,)).start()
+        self.output_text.delete("1.0", tk.END)
+        self.output_text.insert('end', '📘 Tính năng tạm ngừng\n', 'warning')
 
     def on_check_vue_order(self):
-        threading.Thread(target=check_vue_order_main, args=(self,)).start()
+        # threading.Thread(target=check_vue_order_main, args=(self,)).start()
+        self.output_text.delete("1.0", tk.END)
+        self.output_text.insert('end', '⚡ Tính năng tạm ngừng\n', 'warning')
 
     def on_check_english_comments(self):
+        self.output_text.delete("1.0", tk.END)
         threading.Thread(target=check_english_comments_main,
                          args=(self,)).start()
 
     def on_check_hardcode_values(self):
+        self.output_text.delete("1.0", tk.END)
         threading.Thread(target=check_hardcoded_values_main,
                          args=(self,)).start()
 
     def get_file_list(self):
+        self.output_text.delete("1.0", tk.END)
         input_text = self.path_input.get("1.0", tk.END)
         files = [line.strip()
                  for line in input_text.splitlines() if line.strip()]
