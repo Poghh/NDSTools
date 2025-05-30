@@ -15,140 +15,160 @@ from toolsAction.feActions.jsdoc_checker import check_jsdoc
 from toolsAction.feActions.vue_order_checker import check_vue_order_main
 from toolsAction.feActions.english_comment_checker import check_english_comments_main
 from toolsAction.feActions.hardcode_value_checker import check_hardcoded_values_main
+from PIL import Image, ImageTk
 
 
 class FrontEndTab:
     def __init__(self, tab_parent):
-        self.tab = ttk.Frame(tab_parent)
+        self.tab = ttk.Frame(tab_parent, style="Custom.TFrame")
         tab_parent.add(self.tab, text="🌐 Front-End")
-
+        self.icons = {}
         self.init_ui()
 
-    def init_ui(self):
-        self.root = self.tab  # để tái sử dụng layout gốc
+    def load_icon(self, name, size=(24, 24)):
+        path = os.path.join(os.path.dirname(__file__), 'assets', name)
+        if os.path.exists(path):
+            img = Image.open(path).resize(size, Image.LANCZOS)
+            return ImageTk.PhotoImage(img)
+        return None
 
+    def init_ui(self):
+        style = ttk.Style()
+        style.configure("Custom.TFrame", background="#f5f7fa")
+        style.configure("Custom.TLabelframe", background="#e3eafc", borderwidth=2, relief="ridge")
+        style.configure("Custom.TButton", font=("Segoe UI", 10), padding=6, background="#fff", foreground="#222", borderwidth=1, relief="ridge")
+        style.map("Custom.TButton",
+            background=[('active', '#e3eafc'), ('disabled', '#f0f0f0')],
+            foreground=[('active', '#0d47a1'), ('disabled', '#888')],
+            bordercolor=[('active', '#2d5be3'), ('!active', '#b0c4de')]
+        )
+        style.configure("Custom.TLabel", background="#f5f7fa", font=("Segoe UI", 10))
+        style.configure("Custom.TLabelframe.Label", font=("Segoe UI", 11, "bold"), foreground="#2d5be3")
+
+        self.root = self.tab
         self.root.title = lambda title: None
         self.root.geometry = lambda geom: None
 
-        self.top_frame = tk.Frame(self.root)
-        self.top_frame.pack(fill='x', padx=10, pady=(10, 5))
+        self.top_frame = tk.Frame(self.root, bg="#f5f7fa")
+        self.top_frame.pack(fill='x', padx=16, pady=(16, 8))
 
-        self.frame_input = tk.LabelFrame(
-            self.top_frame, text="🔹 Nhập danh sách path cần kiểm tra", padx=10, pady=10)
-        self.frame_input.pack(side=tk.LEFT, fill='both',
-                              expand=True, padx=(0, 5))
+        self.frame_input = ttk.LabelFrame(
+            self.top_frame, text="🔹 Nhập danh sách path cần kiểm tra", padding=12, style="Custom.TLabelframe")
+        self.frame_input.pack(side=tk.LEFT, fill='both', expand=True, padx=(0, 8))
 
-        self.selfcheck_frame = tk.Frame(self.frame_input)
-        self.selfcheck_frame.pack(fill='x', pady=(0, 5))
+        self.selfcheck_frame = tk.Frame(self.frame_input, bg="#e3eafc")
+        self.selfcheck_frame.pack(fill='x', pady=(0, 8))
 
+        upload_icon = self.load_icon('upload.png')
         self.upload_selfcheck_btn = tk.Button(
-            self.selfcheck_frame, text="📂 Tải file Self-check", command=self.upload_selfcheck)
+            self.selfcheck_frame, text="📂 Tải file Self-check", image=upload_icon, compound=tk.LEFT, command=self.upload_selfcheck, bg="#fff", fg="#222", font=("Segoe UI", 10, "bold"), relief=tk.RIDGE, bd=1, activebackground="#e3eafc", activeforeground="#0d47a1")
+        self.upload_selfcheck_btn.image = upload_icon
         self.upload_selfcheck_btn.pack(side=tk.LEFT)
 
         self.selfcheck_label = tk.Label(
-            self.selfcheck_frame, text="Chưa chọn file", fg="gray")
+            self.selfcheck_frame, text="Chưa chọn file", fg="gray", bg="#e3eafc", font=("Segoe UI", 10, "italic"))
         self.selfcheck_label.pack(side=tk.LEFT, padx=(10, 0))
 
         self.path_input = scrolledtext.ScrolledText(
-            self.frame_input, height=10, wrap=tk.WORD, font=("Consolas", 10))
+            self.frame_input, height=10, wrap=tk.WORD, font=("Consolas", 10), bg="#fafdff", relief=tk.GROOVE, borderwidth=2)
         self.path_input.pack(fill='both', expand=True)
 
         self.path_input.drop_target_register(DND_FILES)
         self.path_input.dnd_bind('<<Drop>>', self.handle_drop)
 
-        self.frame_future = tk.LabelFrame(
-            self.top_frame, text="🧩 Tải lên tài liệu (Excel)", padx=10, pady=10)
-        self.frame_future.pack(side=tk.LEFT, fill='both',
-                               expand=True, padx=(5, 0))
+        self.frame_future = ttk.LabelFrame(
+            self.top_frame, text="🧩 Tải lên tài liệu (Excel)", padding=12, style="Custom.TLabelframe")
+        self.frame_future.pack(side=tk.LEFT, fill='both', expand=True, padx=(8, 0))
 
+        upload_excel_icon = self.load_icon('excel.png')
         self.upload_excel_btn = tk.Button(
-            self.frame_future, text="📂 Tải file tài liệu", command=self.upload_excel_docs)
+            self.frame_future, text="📂 Tải file tài liệu", image=upload_excel_icon, compound=tk.LEFT, command=self.upload_excel_docs, bg="#fff", fg="#222", font=("Segoe UI", 10, "bold"), relief=tk.RIDGE, bd=1, activebackground="#e3eafc", activeforeground="#0d47a1")
+        self.upload_excel_btn.image = upload_excel_icon
         self.upload_excel_btn.pack(anchor='nw')
 
         self.excel_label = tk.Label(
-            self.frame_future, text="Chưa chọn file", fg="gray")
+            self.frame_future, text="Chưa chọn file", fg="gray", bg="#e3eafc", font=("Segoe UI", 10, "italic"))
         self.excel_label.pack(anchor='nw', pady=(5, 5))
 
         self.excel_output = scrolledtext.ScrolledText(
-            self.frame_future, height=6, wrap=tk.WORD, font=("Consolas", 10))
+            self.frame_future, height=6, wrap=tk.WORD, font=("Consolas", 10), bg="#fafdff", relief=tk.GROOVE, borderwidth=2)
         self.excel_output.pack(fill='both', expand=True)
 
         self.excel_output.drop_target_register(DND_FILES)
         self.excel_output.dnd_bind('<<Drop>>', self.handle_docs_drop)
 
-        self.author_subframe = tk.Frame(self.frame_future)
+        self.author_subframe = tk.Frame(self.frame_future, bg="#e3eafc")
         self.author_subframe.pack(fill='x', pady=(10, 0))
 
-        tk.Label(self.author_subframe, text="👤 Nhập tên tác giả:").pack(
-            side=tk.LEFT, padx=(0, 10))
+        tk.Label(self.author_subframe, text="👤 Nhập tên tác giả:", bg="#e3eafc", font=("Segoe UI", 10, "bold")).pack(side=tk.LEFT, padx=(0, 10))
         self.author_var = tk.StringVar()
         self.author_var.trace_add("write", self.convert_author_to_uppercase)
         self.author_entry = tk.Entry(
-            self.author_subframe, textvariable=self.author_var)
+            self.author_subframe, textvariable=self.author_var, font=("Consolas", 10), relief=tk.GROOVE, borderwidth=2)
         self.author_entry.pack(side=tk.LEFT, fill='x', expand=True)
 
-        btn_frame = tk.Frame(self.root)
-        btn_frame.pack(pady=(0, 10))
-
+        btn_frame = tk.Frame(self.root, bg="#f5f7fa")
+        btn_frame.pack(pady=(0, 16))
         btn_width = 20
 
+        self.progress = ttk.Progressbar(self.root, mode='indeterminate', length=200)
+        self.progress.pack(pady=(0, 5))
+        self.progress.pack_forget()
 
-        # row 0
-        self.run_button = tk.Button(
-            btn_frame, text="🚀 Run ESLint", width=btn_width, command=self.on_run_eslint)
-        self.run_button.grid(row=0, column=0, padx=10, pady=5)
+        # Sắp xếp lại các nút, mỗi hàng 6 nút, tăng bo góc và padding
+        btns = [
+            ("🚀 Run ESLint", self.on_run_eslint),
+            ("📝 Check Title", self.on_check_title_comment),
+            ("🎨 Check CSS", self.on_check_css_color),
+            ("🔍 Check JP Text", self.on_check_hardcode_jp),
+            ("🛑 Check Console", self.on_check_console),
+            ("🔤 Check Eng Cmt", self.on_check_english_comments),
+            ("🔒 Check Values", self.on_check_hardcode_values),
+            ("🧮 Count Lines", self.on_count_lines),
+            ("📘 Check JSDoc", self.on_check_jsdoc, True),
+            ("⚡ Check Vue", self.on_check_vue_order, True),
+            ("🔄 Clear All", self.clear_all)
+        ]
+        self.buttons = []
+        col_count = 6
+        for idx, btn in enumerate(btns):
+            row = idx // col_count
+            col = idx % col_count
+            text, cmd = btn[0], btn[1]
+            is_disabled = len(btn) > 2 and btn[2]
+            b = tk.Button(
+                btn_frame,
+                text=text,
+                width=18,
+                command=cmd,
+                bg="#fff",
+                fg="#222",
+                font=("Segoe UI", 10),
+                relief=tk.RIDGE,
+                bd=2,
+                activebackground="#e3eafc",
+                activeforeground="#0d47a1",
+                highlightthickness=1,
+                highlightbackground="#b0c4de",
+                padx=8,
+                pady=8,
+                disabledforeground="#888"
+            )
+            if is_disabled:
+                b.config(state=tk.DISABLED, bg="#f0f0f0", fg="#888")
+            b.grid(row=row, column=col, padx=8, pady=8, sticky="nsew")
+            self.buttons.append(b)
+        # Đảm bảo các cột đều nhau
+        for i in range(col_count):
+            btn_frame.grid_columnconfigure(i, weight=1)
 
-        self.check_title_button = tk.Button(
-            btn_frame, text="📝 Check Title", width=btn_width, command=self.on_check_title_comment)
-        self.check_title_button.grid(row=0, column=1, padx=10, pady=5)
-
-        self.check_color_button = tk.Button(
-            btn_frame, text="🎨 Check CSS", width=btn_width, command=self.on_check_css_color)
-        self.check_color_button.grid(row=0, column=2, padx=10, pady=5)
-
-        self.check_hardcode_button = tk.Button(
-            btn_frame, text="🔍 Check JP Text", width=btn_width, command=self.on_check_hardcode_jp)
-        self.check_hardcode_button.grid(row=0, column=3, padx=10, pady=5)
-
-        self.check_console_button = tk.Button(
-            btn_frame, text="🛑 Check Console", width=btn_width, command=self.on_check_console)
-        self.check_console_button.grid(row=0, column=4, padx=10, pady=5)
-
-        # row 1
-        self.check_english_comments_button = tk.Button(
-            btn_frame, text="🔤 Check Eng Cmt", width=btn_width, command=self.on_check_english_comments)
-        self.check_english_comments_button.grid(
-            row=1, column=0, padx=10, pady=5)
-
-        self.check_hardcode_values_button = tk.Button(
-            btn_frame, text="🔒 Check Values", width=btn_width, command=self.on_check_hardcode_values)
-        self.check_hardcode_values_button.grid(
-            row=1, column=1, padx=10, pady=5)
-
-        self.count_button = tk.Button(
-            btn_frame, text="🧮 Count Lines", width=btn_width, command=self.on_count_lines)
-        self.count_button.grid(row=1, column=2, padx=10, pady=5)
-
-        # row 2
-        self.check_jsdoc_button = tk.Button(
-            btn_frame, text="📘 Check JSDoc", width=btn_width, command=self.on_check_jsdoc)
-        self.check_jsdoc_button.grid(row=2, column=0, padx=10, pady=5)
-
-        self.check_vue_order_button = tk.Button(
-            btn_frame, text="⚡ Check Vue", width=btn_width, command=self.on_check_vue_order)
-        self.check_vue_order_button.grid(row=2, column=1, padx=10, pady=5)
-
-        self.clear_button = tk.Button(
-            btn_frame, text="🔄 Clear All", width=btn_width, command=self.clear_all)
-        self.clear_button.grid(row=2, column=2, padx=10, pady=5)
-        
         self.status_label = tk.Label(
-            self.root, text="", fg="blue", font=("Segoe UI", 12, "italic"))
+            self.root, text="", fg="#2d5be3", bg="#f5f7fa", font=("Segoe UI", 12, "italic"))
         self.status_label.pack(pady=(0, 5))
 
         self.output_text = scrolledtext.ScrolledText(
-            self.root, wrap=tk.WORD, font=("Consolas", 10))
-        self.output_text.pack(expand=True, fill='both', padx=10, pady=10)
+            self.root, wrap=tk.WORD, font=("Consolas", 10), bg="#fafdff", relief=tk.GROOVE, borderwidth=2)
+        self.output_text.pack(expand=True, fill='both', padx=16, pady=16)
 
         self.output_text.tag_configure(
             "error", foreground="red", font=("Consolas", 12, "bold"))
@@ -166,17 +186,14 @@ class FrontEndTab:
     def handle_drop(self, event):
         try:
             file_path = event.data
-            # Convert TK DND path format to normal path
             if file_path.startswith('{'):
                 file_path = file_path[1:-1]
 
-            # Check if it's an Excel file
             if not file_path.lower().endswith(('.xlsx', '.xls')):
                 self.selfcheck_label.config(
                     text="❌ Chỉ chấp nhận file Excel", fg="red")
                 return
 
-            # Process the Excel file
             self.process_selfcheck_excel(file_path)
         except Exception as e:
             self.selfcheck_label.config(text=f"❌ Lỗi: {str(e)}", fg="red")
@@ -211,17 +228,14 @@ class FrontEndTab:
     def handle_docs_drop(self, event):
         try:
             file_path = event.data
-            # Convert TK DND path format to normal path
             if file_path.startswith('{'):
                 file_path = file_path[1:-1]
 
-            # Check if it's an Excel file
             if not file_path.lower().endswith(('.xlsx', '.xls')):
                 self.excel_label.config(
                     text="❌ Chỉ chấp nhận file Excel", fg="red")
                 return
 
-            # Process the Excel file
             self.process_excel_docs(file_path)
         except Exception as e:
             self.excel_label.config(text=f"❌ Lỗi: {str(e)}", fg="red")
@@ -247,7 +261,6 @@ class FrontEndTab:
         result = []
         mark_gui = None
 
-        # Tìm cột chứa "画面No."
         for col_idx, cell in enumerate(workbook.iloc[0]):
             if str(cell).strip() == "画面No." or str(cell).strip() == "画面No．" or "画面No" in str(cell).strip():
                 mark_gui = col_idx
@@ -303,49 +316,111 @@ class FrontEndTab:
         if current != upper:
             self.author_var.set(upper)
 
+    def start_loading(self):
+        self.progress.pack(pady=(0, 5))
+        self.progress.start(10)
+        self.set_running_state(True)
+
+    def stop_loading(self):
+        self.progress.stop()
+        self.progress.pack_forget()
+        self.set_running_state(False)
+
     def on_run_eslint(self):
         self.output_text.delete("1.0", tk.END)
-        threading.Thread(target=run_eslint, args=(self,)).start()
+        self.start_loading()
+        threading.Thread(target=self._run_eslint_thread).start()
+
+    def _run_eslint_thread(self):
+        try:
+            run_eslint(self)
+        finally:
+            self.stop_loading()
 
     def on_count_lines(self):
         self.output_text.delete("1.0", tk.END)
-        threading.Thread(target=count_lines, args=(self,)).start()
+        self.start_loading()
+        threading.Thread(target=self._count_lines_thread).start()
+
+    def _count_lines_thread(self):
+        try:
+            count_lines(self)
+        finally:
+            self.stop_loading()
 
     def on_check_title_comment(self):
         self.output_text.delete("1.0", tk.END)
-        threading.Thread(target=check_title_comment, args=(self,)).start()
+        self.start_loading()
+        threading.Thread(target=self._check_title_comment_thread).start()
+
+    def _check_title_comment_thread(self):
+        try:
+            check_title_comment(self)
+        finally:
+            self.stop_loading()
 
     def on_check_css_color(self):
         self.output_text.delete("1.0", tk.END)
-        threading.Thread(target=check_css_color_main, args=(self,)).start()
+        self.start_loading()
+        threading.Thread(target=self._check_css_color_thread).start()
+
+    def _check_css_color_thread(self):
+        try:
+            check_css_color_main(self)
+        finally:
+            self.stop_loading()
 
     def on_check_hardcode_jp(self):
         self.output_text.delete("1.0", tk.END)
-        threading.Thread(target=check_hardcode_jp, args=(self,)).start()
+        self.start_loading()
+        threading.Thread(target=self._check_hardcode_jp_thread).start()
+
+    def _check_hardcode_jp_thread(self):
+        try:
+            check_hardcode_jp(self)
+        finally:
+            self.stop_loading()
 
     def on_check_console(self):
         self.output_text.delete("1.0", tk.END)
-        threading.Thread(target=check_console_log, args=(self,)).start()
+        self.start_loading()
+        threading.Thread(target=self._check_console_thread).start()
+
+    def _check_console_thread(self):
+        try:
+            check_console_log(self)
+        finally:
+            self.stop_loading()
 
     def on_check_jsdoc(self):
-        # threading.Thread(target=check_jsdoc, args=(self,)).start()
         self.output_text.delete("1.0", tk.END)
         self.output_text.insert('end', '📘 Tính năng tạm ngừng\n', 'warning')
 
     def on_check_vue_order(self):
-        # threading.Thread(target=check_vue_order_main, args=(self,)).start()
         self.output_text.delete("1.0", tk.END)
         self.output_text.insert('end', '⚡ Tính năng tạm ngừng\n', 'warning')
 
     def on_check_english_comments(self):
         self.output_text.delete("1.0", tk.END)
-        threading.Thread(target=check_english_comments_main,
-                         args=(self,)).start()
+        self.start_loading()
+        threading.Thread(target=self._check_english_comments_thread).start()
+
+    def _check_english_comments_thread(self):
+        try:
+            check_english_comments_main(self)
+        finally:
+            self.stop_loading()
 
     def on_check_hardcode_values(self):
         self.output_text.delete("1.0", tk.END)
-        threading.Thread(target=check_hardcoded_values_main,
-                         args=(self,)).start()
+        self.start_loading()
+        threading.Thread(target=self._check_hardcode_values_thread).start()
+
+    def _check_hardcode_values_thread(self):
+        try:
+            check_hardcoded_values_main(self)
+        finally:
+            self.stop_loading()
 
     def get_file_list(self):
         self.output_text.delete("1.0", tk.END)
@@ -374,18 +449,7 @@ class FrontEndTab:
 
     def set_running_state(self, running: bool):
         state = tk.DISABLED if running else tk.NORMAL
-        self.run_button.config(state=state)
-        self.count_button.config(state=state)
-        self.clear_button.config(state=state)
-        self.upload_excel_btn.config(state=state)
-        self.upload_selfcheck_btn.config(state=state)
-        self.check_title_button.config(state=state)
-        self.check_color_button.config(state=state)
-        self.check_hardcode_button.config(state=state)
-        self.check_console_button.config(state=state)
-        self.check_jsdoc_button.config(state=state)
-        self.check_vue_order_button.config(state=state)
-        self.check_english_comments_button.config(state=state)
-        self.check_hardcode_values_button.config(state=state)
+        for btn in self.buttons:
+            btn.config(state=state)
         self.status_label.config(
             text="⏳ Đang xử lý..." if running else "✅ Sẵn sàng.")
