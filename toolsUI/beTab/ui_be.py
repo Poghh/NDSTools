@@ -6,80 +6,163 @@ from toolsAction.beActions.select_file import select_file
 from toolsAction.beActions.comment_generator import generate_comment
 from toolsAction.beActions.create_java_dto_class import generated_dto
 from tkinter import scrolledtext
+from toolsAction.beActions.process_selfcheck_excel import process_selfcheck_excel
 
 
 class BackEndTab:
     def __init__(self, parent):
         self.tab = tk.Frame(parent)
-        parent.add(self.tab, text="Back-End")
+        parent.add(self.tab, text="⚙️Back-End")
         self.build_ui()
 
     def build_ui(self):
-        # === Layout: Input bên trái, Output bên phải ===
-        frame_input = tk.Frame(self.tab, width=240, bg="lightgray")
-        frame_input.pack(side=tk.LEFT, fill=tk.Y)
+        # === Cấu hình bố cục chính cho self.tab ===
+        self.tab.columnconfigure(0, weight=1)
+        self.tab.columnconfigure(1, weight=3)
+        self.tab.rowconfigure(0, weight=1)
 
+        # === FRAME TRÁI ===
+        frame_input = tk.Frame(self.tab, bg="lightgray")
+        frame_input.grid(row=0, column=0, sticky="nswe", padx=10, pady=10)
+        frame_input.columnconfigure(0, weight=1)
+
+        # === FRAME PHẢI ===
         frame_output = tk.Frame(self.tab)
-        frame_output.pack(side=tk.LEFT, fill=tk.BOTH, expand=True)
+        frame_output.grid(row=0, column=1, sticky="nsew", padx=10, pady=10)
+        frame_output.rowconfigure(0, weight=1)
+        frame_output.columnconfigure(0, weight=1)
 
-        # === FILE SELECT & DTO ===
-        self.file_path = None  # <-- thêm biến lưu đường dẫn file
-        self.file_path_label = tk.Label(
-            frame_input, text="Chưa chọn file", bg="lightgray", width=30
+        # === [1] SELF CHECK === (được đưa lên đầu tiên)
+        helper_frame = tk.LabelFrame(
+            frame_input, text="📁 Self Check (tùy chọn)", bg="lightgray"
         )
-        self.file_path_label.pack(pady=10)
+        helper_frame.grid(row=0, column=0, sticky="nsew", pady=(0, 10))
+
+        self.self_check_path = None
+        self.self_check_label = tk.Label(
+            helper_frame, text="Chưa chọn file", bg="lightgray", font=("Arial", 8)
+        )
+        self.self_check_label.pack(pady=(2, 0), anchor="center")
 
         tk.Button(
-            frame_input, text="Chọn File Excel", command=lambda: select_file(self)
-        ).pack(pady=5)
-        tk.Button(
-            frame_input, text="Generate DTO", command=lambda: generated_dto(self)
-        ).pack(pady=5)
+            helper_frame,
+            text="Tải File Self Check",
+            command=lambda: select_self_check_file(self),
+            width=25,
+        ).pack(pady=2, anchor="center")
 
-        # === COMMENT GENERATOR ===
-        tk.Label(frame_input, text="-------------------------", bg="lightgray").pack(
-            pady=10
+        tk.Button(helper_frame, text="Đếm dòng code từ Self Check", width=25).pack(
+            pady=2, anchor="center"
         )
 
         tk.Label(
-            frame_input,
-            text="Tạo Comment File",
+            helper_frame,
+            text="Danh sách file đã load:",
             bg="lightgray",
-            font=("Arial", 10, "bold"),
-        ).pack(pady=5)
+            font=("Arial", 8),
+        ).pack(anchor="w", padx=5, pady=(5, 0))
 
-        tk.Label(frame_input, text="Tên tác giả:", bg="lightgray").pack()
-        self.author_entry = tk.Entry(frame_input, width=25)
-        self.author_entry.pack(pady=2)
+        listbox_frame = tk.Frame(helper_frame)
+        listbox_frame.pack(padx=5, pady=2, fill=tk.BOTH, expand=True)
 
-        tk.Label(frame_input, text="Mã màn hình:", bg="lightgray").pack()
-        self.screen_code_entry = tk.Entry(frame_input, width=25)
-        self.screen_code_entry.pack(pady=2)
+        x_scrollbar = tk.Scrollbar(listbox_frame, orient=tk.HORIZONTAL)
+        x_scrollbar.pack(side=tk.BOTTOM, fill=tk.X)
 
-        tk.Label(frame_input, text="Chọn ngày:", bg="lightgray").pack()
+        self.file_listbox = tk.Listbox(
+            listbox_frame, height=6, xscrollcommand=x_scrollbar.set
+        )
+        self.file_listbox.pack(side=tk.LEFT, fill=tk.BOTH, expand=True)
+        x_scrollbar.config(command=self.file_listbox.xview)
+
+        # === [2] COMMENT GENERATOR ===
+        comment_frame = tk.LabelFrame(
+            frame_input, text="② Tạo Comment cho File", bg="lightgray"
+        )
+        comment_frame.grid(row=1, column=0, sticky="ew", pady=10)
+
+        tk.Label(comment_frame, text="Tên tác giả:", bg="lightgray").pack(
+            anchor="center", pady=(5, 0)
+        )
+        self.author_entry = tk.Entry(comment_frame, width=25)
+        self.author_entry.pack(pady=2, anchor="center")
+
+        tk.Label(comment_frame, text="Mã màn hình:", bg="lightgray").pack(
+            anchor="center", pady=(5, 0)
+        )
+        self.screen_code_entry = tk.Entry(comment_frame, width=25)
+        self.screen_code_entry.pack(pady=2, anchor="center")
+
+        tk.Label(comment_frame, text="Chọn ngày:", bg="lightgray").pack(
+            anchor="center", pady=(5, 0)
+        )
         self.date_entry = DateEntry(
-            frame_input,
-            width=22,
+            comment_frame,
             background="darkblue",
             foreground="white",
             borderwidth=2,
             date_pattern="yyyy/mm/dd",
+            width=22,
         )
-        self.date_entry.pack(pady=2)
+        self.date_entry.pack(pady=2, anchor="center")
 
         tk.Button(
-            frame_input, text="Tạo Comment", command=lambda: generate_comment(self)
-        ).pack(pady=10)
+            comment_frame,
+            text="Tạo Comment",
+            command=lambda: generate_comment(self),
+            width=25,
+        ).pack(pady=5, anchor="center")
 
-        # # === Sinh Unit Test (Dialog) ===
+        # === [3] FILE CHỌN & DTO === (di chuyển xuống cuối)
+        file_frame = tk.LabelFrame(
+            frame_input, text="① Chọn File & Tạo DTO", bg="lightgray"
+        )
+        file_frame.grid(row=2, column=0, sticky="ew", pady=(0, 10))
+
+        self.file_path = None
+        self.file_path_label = tk.Label(
+            file_frame, text="Chưa chọn file", bg="lightgray"
+        )
+        self.file_path_label.pack(pady=5, anchor="center")
+
+        tk.Button(
+            file_frame,
+            text="Chọn File Excel",
+            command=lambda: select_file(self),
+            width=25,
+        ).pack(pady=2, anchor="center")
+
+        tk.Button(
+            file_frame,
+            text="Generate DTO",
+            command=lambda: generated_dto(self),
+            width=25,
+        ).pack(pady=2, anchor="center")
+
+        # === [4] UNIT TEST ===
         tk.Button(
             frame_input,
-            text="Sinh Unit Test (Dialog)",
+            text="③ Sinh Unit Test (Dialog)",
             command=lambda: UnitTestDialog(self.tab),
-        ).pack(pady=10)
+            width=25,
+        ).grid(row=3, column=0, pady=20, sticky="n")
 
         # === OUTPUT TEXT ===
-        self.output_text = scrolledtext.ScrolledText(
-            frame_output, wrap=tk.WORD, width=80, height=30
+        self.output_text = scrolledtext.ScrolledText(frame_output, wrap=tk.WORD)
+        self.output_text.grid(row=0, column=0, sticky="nsew")
+
+
+def select_self_check_file(self):
+    from tkinter import filedialog
+
+    file_path = filedialog.askopenfilename(
+        title="Chọn file Self Check (Excel)",
+        filetypes=[("Excel files", "*.xlsx *.xls")],
+    )
+    if file_path:
+        process_selfcheck_excel(
+            file_path=file_path,
+            label_widget=self.self_check_label,
+            listbox_widget=self.file_listbox,
+            screen_code_entry=self.screen_code_entry,
+            author_entry = self.author_entry
         )
-        self.output_text.pack(padx=10, pady=10, expand=True, fill=tk.BOTH)

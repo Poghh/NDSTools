@@ -1,0 +1,8 @@
+{
+  "include": ["*"],
+  "exclude": ["build", "dist", "**/__pycache__"],
+  "reportMissingImports": true,
+  "reportUnusedImport": true,
+  "typeCheckingMode": "basic", // hoặc "basic"
+  "pythonVersion": "3.12"
+}
