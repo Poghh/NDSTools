@@ -24,12 +24,31 @@ Kiểm tra bằng:
 python --version
 ```
 
+### 2. (Tùy chọn) Tạo môi trường ảo
+
+```bash
 python -m venv venv
 venv\Scripts\activate # Windows
-
 # hoặc
+source venv/bin/activate  # macOS/Linux
+```
 
-source venv/bin/activate # macOS/Linux
+### 3. Cài các thư viện phụ thuộc
+
+Nếu đã có `requirements.txt`:
+
+```bash
 pip install -r requirements.txt
+```
+
+Nếu chưa, bạn có thể tạo sau khi hoàn tất cài đặt bằng:
+
+```bash
 pip freeze > requirements.txt
+```
+
+### 4. Chạy ứng dụng
+
+```bash
 python autoReviewTool.py
+```
