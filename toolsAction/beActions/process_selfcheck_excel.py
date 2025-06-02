@@ -52,8 +52,6 @@ def process_selfcheck_excel(
         if str(row[3]).strip() == "新規" and pd.notna(row[2]):
             result.append(str(row[2]).strip())
 
-    print(f"Found name: {name}")
-
     if not result:
         listbox_widget.insert(tk.END, "⚠️ Không tìm thấy dòng nào có trạng thái '新規'")
     else:

@@ -75,9 +75,9 @@ class BackEndTab:
         self.file_listbox.pack(side=tk.LEFT, fill=tk.BOTH, expand=True)
         x_scrollbar.config(command=self.file_listbox.xview)
 
-        # === [2] COMMENT GENERATOR ===
+        # === [2] COMMENT & UNIT TEST GENERATOR ===
         comment_frame = tk.LabelFrame(
-            frame_input, text="Tạo Comment cho File", bg="lightgray"
+            frame_input, text="Tạo Comment cho File & Unit Test", bg="lightgray"
         )
         comment_frame.grid(row=1, column=0, sticky="ew", pady=10)
 
@@ -111,7 +111,14 @@ class BackEndTab:
             text="Tạo Comment",
             command=lambda: generate_comment(self),
             width=25,
-        ).pack(pady=5, anchor="center")
+        ).pack(pady=(5, 2), anchor="center")
+
+        tk.Button(
+            comment_frame,
+            text="Sinh Unit Test (Dialog)",
+            command=lambda: UnitTestDialog(self.tab),
+            width=25,
+        ).pack(pady=(0, 5), anchor="center")
 
         # === [3] FILE CHỌN & DTO === (di chuyển xuống cuối)
         file_frame = tk.LabelFrame(
@@ -138,14 +145,6 @@ class BackEndTab:
             command=lambda: generated_dto(self),
             width=25,
         ).pack(pady=2, anchor="center")
-
-        # === [4] UNIT TEST ===
-        tk.Button(
-            frame_input,
-            text="Sinh Unit Test (Dialog)",
-            command=lambda: UnitTestDialog(self.tab),
-            width=25,
-        ).grid(row=3, column=0, pady=20, sticky="n")
 
         # === OUTPUT TEXT ===
         self.output_text = scrolledtext.ScrolledText(frame_output, wrap=tk.WORD)
