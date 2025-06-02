@@ -1,87 +1,68 @@
-import os
 import sys
-import time
-from threading import Thread
-from watchdog.observers import Observer
-from watchdog.events import FileSystemEventHandler
 
-# GUI imports
-from tkinterdnd2 import TkinterDnD
-from tkinter import ttk
-from toolsUI.beTab.ui_be import BackEndTab
-from toolsUI.ui_fe import FrontEndTab
+if "--watch" in sys.argv:
+    import subprocess
+    import time
+    from watchdog.observers import Observer
+    from watchdog.events import FileSystemEventHandler
 
+    class ReloadHandler(FileSystemEventHandler):
+        def __init__(self):
+            self.process = None
+            self.restart_app()
 
-# ========== Watchdog Handler ==========
-class ReloadHandler(FileSystemEventHandler):
-    def __init__(self, restart_callback):
-        self.restart_callback = restart_callback
+        def restart_app(self):
+            if self.process:
+                print("🛑 Dừng app cũ...")
+                self.process.kill()
+                self.process.wait()
+            print("🔁 Đang khởi động lại app...")
+            self.process = subprocess.Popen(["python", __file__])
 
-    def on_modified(self, event):
-        src_path = (
-            event.src_path.decode()
-            if isinstance(event.src_path, bytes)
-            else event.src_path
-        )
-        if src_path.endswith(".py"):
-            print(f"🔁 File changed: {src_path}, reloading app...")
-            self.restart_callback()
+        def on_modified(self, event):
+            if str(event.src_path).endswith(".py"):
+                print(f"📝 File thay đổi: {event.src_path}")
+                self.restart_app()
 
+    if __name__ == "__main__":
+        print("👀 Watchdog bắt đầu theo dõi thay đổi...")
+        observer = Observer()
+        handler = ReloadHandler()
+        observer.schedule(handler, path=".", recursive=True)
+        observer.start()
+        try:
+            while True:
+                time.sleep(1)
+        except KeyboardInterrupt:
+            observer.stop()
+            if handler.process:
+                handler.process.kill()
+                handler.process.wait()
+        observer.join()
 
-# ========== Main App ==========
-class AutoReviewTool:
-    def __init__(self, root):
-        self.root = root
-        self.root.title("Review Tool")
-        self.root.geometry("1200x780")
+else:
+    # === Đây là phần chạy GUI chính ===
+    from tkinterdnd2 import TkinterDnD
+    from tkinter import ttk
+    from toolsUI.beTab.ui_be import BackEndTab
+    from toolsUI.ui_fe import FrontEndTab
 
-        self.tab_parent = ttk.Notebook(self.root)
-        self.tab_parent.pack(fill="both", expand=True)
+    class AutoReviewTool:
+        def __init__(self, root):
+            self.root = root
+            self.root.title("Review Tool")
+            self.root.geometry("1200x780")
 
-        # Tạo tab FE
-        self.fe_tab = FrontEndTab(self.tab_parent)
+            self.tab_parent = ttk.Notebook(self.root)
+            self.tab_parent.pack(fill="both", expand=True)
 
-        # Tạo tab BE
-        self.be_tab = BackEndTab(self.tab_parent)
+            # Tab FE
+            self.fe_tab = FrontEndTab(self.tab_parent)
 
+            # Tab BE
+            self.be_tab = BackEndTab(self.tab_parent)
 
-# ========== Reload Logic ==========
-def launch_gui():
-    global root
-    root = TkinterDnD.Tk()
-    app = AutoReviewTool(root)
-    root.mainloop()
-
-
-def restart_program():
-    """Restart the current program."""
-    python = sys.executable
-    os.execl(python, python, *sys.argv)
-
-
-def start_watchdog():
-    def on_change():
-        root.destroy()  # thoát mainloop an toàn
-        restart_program()
-
-    observer = Observer()
-    event_handler = ReloadHandler(on_change)
-    observer.schedule(event_handler, path=".", recursive=True)
-    observer.start()
-    print("👀 Watchdog started, watching for changes...")
-
-    try:
-        while True:
-            time.sleep(1)
-    except KeyboardInterrupt:
-        observer.stop()
-    observer.join()
-
-
-if __name__ == "__main__":
-    # Start watchdog in background thread
-    watcher_thread = Thread(target=start_watchdog, daemon=True)
-    watcher_thread.start()
-
-    # Start GUI
-    launch_gui()
+    if __name__ == "__main__":
+        root = TkinterDnD.Tk()
+        app = AutoReviewTool(root)
+        root.mainloop()

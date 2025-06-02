@@ -49,6 +49,8 @@ pip freeze > requirements.txt
 
 ### 4. Chạy ứng dụng
 
+Chạy ứng dụng với hot reload
+
 ```bash
-python autoReviewTool.py
+python autoReviewTool.py --watch
 ```

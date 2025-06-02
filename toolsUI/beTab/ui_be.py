@@ -7,6 +7,7 @@ from toolsAction.beActions.comment_generator import generate_comment
 from toolsAction.beActions.create_java_dto_class import generated_dto
 from tkinter import scrolledtext
 from toolsAction.beActions.process_selfcheck_excel import process_selfcheck_excel
+from toolsAction.beActions.count_code import count_code
 
 
 class BackEndTab:
@@ -33,9 +34,7 @@ class BackEndTab:
         frame_output.columnconfigure(0, weight=1)
 
         # === [1] SELF CHECK === (được đưa lên đầu tiên)
-        helper_frame = tk.LabelFrame(
-            frame_input, text="📁 Self Check (tùy chọn)", bg="lightgray"
-        )
+        helper_frame = tk.LabelFrame(frame_input, text="📁 Self Check", bg="lightgray")
         helper_frame.grid(row=0, column=0, sticky="nsew", pady=(0, 10))
 
         self.self_check_path = None
@@ -51,9 +50,11 @@ class BackEndTab:
             width=25,
         ).pack(pady=2, anchor="center")
 
-        tk.Button(helper_frame, text="Đếm dòng code từ Self Check", width=25).pack(
-            pady=2, anchor="center"
-        )
+        tk.Button(
+            helper_frame,
+            text="Đếm dòng code từ Self Check",
+            command=lambda: count_code(self.file_listbox, self.output_text),
+        ).pack(pady=2, anchor="center")
 
         tk.Label(
             helper_frame,
@@ -76,7 +77,7 @@ class BackEndTab:
 
         # === [2] COMMENT GENERATOR ===
         comment_frame = tk.LabelFrame(
-            frame_input, text="② Tạo Comment cho File", bg="lightgray"
+            frame_input, text="Tạo Comment cho File", bg="lightgray"
         )
         comment_frame.grid(row=1, column=0, sticky="ew", pady=10)
 
@@ -114,7 +115,7 @@ class BackEndTab:
 
         # === [3] FILE CHỌN & DTO === (di chuyển xuống cuối)
         file_frame = tk.LabelFrame(
-            frame_input, text="① Chọn File & Tạo DTO", bg="lightgray"
+            frame_input, text="Chọn File & Tạo DTO", bg="lightgray"
         )
         file_frame.grid(row=2, column=0, sticky="ew", pady=(0, 10))
 
@@ -141,7 +142,7 @@ class BackEndTab:
         # === [4] UNIT TEST ===
         tk.Button(
             frame_input,
-            text="③ Sinh Unit Test (Dialog)",
+            text="Sinh Unit Test (Dialog)",
             command=lambda: UnitTestDialog(self.tab),
             width=25,
         ).grid(row=3, column=0, pady=20, sticky="n")
@@ -164,5 +165,5 @@ def select_self_check_file(self):
             label_widget=self.self_check_label,
             listbox_widget=self.file_listbox,
             screen_code_entry=self.screen_code_entry,
-            author_entry = self.author_entry
+            author_entry=self.author_entry,
         )
