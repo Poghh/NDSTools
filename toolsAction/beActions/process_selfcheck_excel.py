@@ -3,6 +3,23 @@ import pandas as pd
 import tkinter as tk
 
 
+def select_self_check_file(self):
+    from tkinter import filedialog
+
+    file_path = filedialog.askopenfilename(
+        title="Chọn file Self Check (Excel)",
+        filetypes=[("Excel files", "*.xlsx *.xls")],
+    )
+    if file_path:
+        process_selfcheck_excel(
+            file_path=file_path,
+            label_widget=self.self_check_label,
+            listbox_widget=self.file_listbox,
+            screen_code_entry=self.screen_code_entry,
+            author_entry=self.author_entry,
+        )
+
+
 def process_selfcheck_excel(
     file_path: str,
     label_widget: tk.Label,

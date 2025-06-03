@@ -1,12 +1,12 @@
 import tkinter as tk
-from tkinter import scrolledtext
+from tkinter import scrolledtext, messagebox
 from tkcalendar import DateEntry
 from toolsUI.beTab.unit_test_generater_dialog import UnitTestDialog
 from toolsAction.beActions.select_file import select_file
 from toolsAction.beActions.comment_generator import generate_comment
 from toolsAction.beActions.create_java_dto_class import generated_dto
 from tkinter import scrolledtext
-from toolsAction.beActions.process_selfcheck_excel import process_selfcheck_excel
+from toolsAction.beActions.process_selfcheck_excel import select_self_check_file
 from toolsAction.beActions.count_code import count_code
 
 
@@ -116,7 +116,7 @@ class BackEndTab:
         tk.Button(
             comment_frame,
             text="Sinh Unit Test (Dialog)",
-            command=lambda: UnitTestDialog(self.tab),
+            command=self.check_and_open_unittest_dialog,
             width=25,
         ).pack(pady=(0, 5), anchor="center")
 
@@ -150,19 +150,13 @@ class BackEndTab:
         self.output_text = scrolledtext.ScrolledText(frame_output, wrap=tk.WORD)
         self.output_text.grid(row=0, column=0, sticky="nsew")
 
+    def check_and_open_unittest_dialog(self):
+        screen_code = self.screen_code_entry.get().strip()
 
-def select_self_check_file(self):
-    from tkinter import filedialog
+        if not screen_code:
+            messagebox.showwarning(
+                "Thiếu thông tin", "Vui lòng nhập đầy đủ Tên tác giả và Mã màn hình."
+            )
+            return
 
-    file_path = filedialog.askopenfilename(
-        title="Chọn file Self Check (Excel)",
-        filetypes=[("Excel files", "*.xlsx *.xls")],
-    )
-    if file_path:
-        process_selfcheck_excel(
-            file_path=file_path,
-            label_widget=self.self_check_label,
-            listbox_widget=self.file_listbox,
-            screen_code_entry=self.screen_code_entry,
-            author_entry=self.author_entry,
-        )
+        UnitTestDialog(self.tab, screen_code=screen_code)

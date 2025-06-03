@@ -69,6 +69,9 @@ def find_request_and_response_sheets(file_path):
         return None, None
 
 
+from openpyxl.utils import get_column_letter
+
+
 def find_header_ranges_in_sheet(sheet):
     target_headers = ["フィールド名", "データ構造", "必須", "データタイプ"]
     header_ranges = {}
@@ -85,7 +88,7 @@ def find_header_ranges_in_sheet(sheet):
 
             for idx, value in enumerate(headers_in_row):
                 if value in target_headers:
-                    if current_header is not None:
+                    if current_header is not None and start_idx is not None:
                         end_idx = idx - 1 if idx - 1 >= start_idx else idx
                         start_col = get_column_letter(start_idx + 1)
                         end_col = get_column_letter(end_idx + 1)
@@ -99,7 +102,7 @@ def find_header_ranges_in_sheet(sheet):
                 elif value is None and current_header:
                     continue
                 else:
-                    if current_header:
+                    if current_header and start_idx is not None:
                         end_idx = idx - 1 if idx - 1 >= start_idx else idx
                         start_col = get_column_letter(start_idx + 1)
                         end_col = get_column_letter(end_idx + 1)
@@ -111,7 +114,7 @@ def find_header_ranges_in_sheet(sheet):
                         current_header = None
                         start_idx = None
 
-            if current_header:
+            if current_header and start_idx is not None:
                 end_idx = len(headers_in_row) - 1
                 start_col = get_column_letter(start_idx + 1)
                 end_col = get_column_letter(end_idx + 1)
@@ -206,22 +209,45 @@ def convert_to_java_class(sheet_name: str, headers: dict, hierarchy: dict) -> st
         result.append(f"    private String {field_var};\n")
 
     for parent, children in hierarchy.items():
-        is_list = "List" in parent
         parent_var = camel_case(parent)
-        type_decl = f"List<{parent_var}>" if is_list else parent_var
+        parent_comment = next(
+            (
+                name
+                for name, field in zip(headers["フィールド名"], headers["データ構造"])
+                if isinstance(field, list) and field[0] == parent
+            ),
+            parent,
+        )
+        parent_datatype = next(
+            (
+                dtype
+                for field, dtype in zip(
+                    headers["データ構造"], headers.get("データタイプ", [])
+                )
+                if isinstance(field, list) and field[0] == parent
+            ),
+            parent_var,
+        )
 
-        result.append(f"    {field_comment(parent)}")
-        result.append(f"    private {type_decl} {parent_var};\n")
+        result.append(f"    {field_comment(parent_comment)}")
+        result.append(f"    private {parent_datatype} {parent_var};\n")
 
         result.append("    @Getter\n    @Setter")
         result.append(f"    public static class {parent_var} " + "{")
         for child in children:
-            if child in headers["フィールド名"]:
-                idx = headers["フィールド名"].index(child)
-                field_name = headers["データ構造"][idx][0]
-            else:
-                field_name = camel_case(child)
-            result.append(f"        {field_comment(child)}")
+            comment = ""
+            field_name = camel_case(child)
+            for name, field in zip(headers["フィールド名"], headers["データ構造"]):
+                if field and isinstance(field, list):
+                    field_candidate = field[0]
+                else:
+                    field_candidate = field
+                if field_candidate == child:
+                    comment = name
+                    field_name = camel_case(field_candidate)
+                    break
+
+            result.append(f"        {field_comment(comment)}")
             result.append(f"        private String {field_name};\n")
         result.append("    }\n")
 
