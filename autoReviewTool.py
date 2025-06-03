@@ -1,10 +1,14 @@
 import sys
+import subprocess
+import time
+from tkinterdnd2 import TkinterDnD
+from tkinter import ttk
+from toolsUI.beTab.ui_be import BackEndTab
+from toolsUI.ui_fe import FrontEndTab
+from watchdog.observers import Observer
+from watchdog.events import FileSystemEventHandler
 
 if "--watch" in sys.argv:
-    import subprocess
-    import time
-    from watchdog.observers import Observer
-    from watchdog.events import FileSystemEventHandler
 
     class ReloadHandler(FileSystemEventHandler):
         def __init__(self):
@@ -42,11 +46,6 @@ if "--watch" in sys.argv:
 
 else:
     # === Đây là phần chạy GUI chính ===
-    from tkinterdnd2 import TkinterDnD
-    from tkinter import ttk
-    from toolsUI.beTab.ui_be import BackEndTab
-    from toolsUI.ui_fe import FrontEndTab
-
     class AutoReviewTool:
         def __init__(self, root):
             self.root = root

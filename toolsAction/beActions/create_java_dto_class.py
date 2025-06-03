@@ -24,6 +24,7 @@ def generated_dto(tab_instance):
         headers = {
             "フィールド名": data_by_header["フィールド名"],
             "データ構造": data_by_header["データ構造"],
+            "データタイプ": data_by_header["データタイプ"],
             "必須": data_by_header["必須"],
         }
 
@@ -202,6 +203,7 @@ def convert_to_java_class(sheet_name: str, headers: dict, hierarchy: dict) -> st
     result.append("    private static final long serialVersionUID = 1L;\n")
 
     required_flags = headers.get("必須", [])
+    data_types = headers.get("データタイプ", [])
     skip_field_names = {camel_case(parent) for parent in hierarchy}
     for children in hierarchy.values():
         skip_field_names.update(camel_case(child) for child in children)
@@ -215,8 +217,14 @@ def convert_to_java_class(sheet_name: str, headers: dict, hierarchy: dict) -> st
             continue
 
         required = idx < len(required_flags) and str(required_flags[idx]).strip() != "-"
-        dtype = required_flags[idx] if idx < len(required_flags) else None
-        if dtype in ["List<String>", "List<Integer>"]:
+        dtype = data_types[idx] if idx < len(data_types) else None
+        if dtype in [
+            "List<String>",
+            "List<Integer>",
+            "List<Boolean>",
+            "List<Double>",
+            "List<Float>",
+        ]:
             java_type = "List<String>"
         else:
             java_type = "String"
