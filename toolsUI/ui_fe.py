@@ -218,7 +218,13 @@ class FrontEndTab:
             return
 
         result = []
+        name = ""
         for index, row in workbook.iterrows():
+            if pd.notna(row[4]) and "KMD" in str(row[4]) and not name:
+                full_name = str(row[4]).strip()
+                if "KMD" in full_name:
+                    name = full_name.split("KMD", 1)[-1].strip()
+                    self.author_var.set(name)
             if row[3] == "新規":
                 result.append(row[2])
 
