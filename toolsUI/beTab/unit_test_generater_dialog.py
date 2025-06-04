@@ -1,20 +1,21 @@
 import tkinter as tk
 from tkinter import scrolledtext, ttk, messagebox
 import json
-import re
 
 
 class UnitTestDialog(tk.Toplevel):
-    def __init__(self, parent):
+    def __init__(self, parent, screen_code=None):
         super().__init__(parent)
         self.title("Sinh Unit Test")
         self.geometry("800x800")
         self.lift()
+        self.screen_code = screen_code
         self.build_ui()
 
     def build_ui(self):
         tk.Label(self, text="Mã màn hình (GUIコード):").pack(pady=(10, 0))
         self.screen_code_entry = tk.Entry(self, width=40)
+        self.screen_code_entry.insert(0, self.screen_code or "")
         self.screen_code_entry.pack()
 
         tk.Label(self, text="Tên service:").pack(pady=(10, 0))

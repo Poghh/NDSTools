@@ -3,6 +3,23 @@ import pandas as pd
 import tkinter as tk
 
 
+def select_self_check_file(self):
+    from tkinter import filedialog
+
+    file_path = filedialog.askopenfilename(
+        title="Chọn file Self Check (Excel)",
+        filetypes=[("Excel files", "*.xlsx *.xls")],
+    )
+    if file_path:
+        process_selfcheck_excel(
+            file_path=file_path,
+            label_widget=self.self_check_label,
+            listbox_widget=self.file_listbox,
+            screen_code_entry=self.screen_code_entry,
+            author_entry=self.author_entry,
+        )
+
+
 def process_selfcheck_excel(
     file_path: str,
     label_widget: tk.Label,
@@ -51,8 +68,6 @@ def process_selfcheck_excel(
         # Cột 3 = 状態 (tình trạng), Cột 2 = ファイルパス (đường dẫn file)
         if str(row[3]).strip() == "新規" and pd.notna(row[2]):
             result.append(str(row[2]).strip())
-
-    print(f"Found name: {name}")
 
     if not result:
         listbox_widget.insert(tk.END, "⚠️ Không tìm thấy dòng nào có trạng thái '新規'")

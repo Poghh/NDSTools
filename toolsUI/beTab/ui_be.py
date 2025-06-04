@@ -1,12 +1,12 @@
 import tkinter as tk
-from tkinter import scrolledtext
+from tkinter import scrolledtext, messagebox
 from tkcalendar import DateEntry
 from toolsUI.beTab.unit_test_generater_dialog import UnitTestDialog
 from toolsAction.beActions.select_file import select_file
 from toolsAction.beActions.comment_generator import generate_comment
 from toolsAction.beActions.create_java_dto_class import generated_dto
 from tkinter import scrolledtext
-from toolsAction.beActions.process_selfcheck_excel import process_selfcheck_excel
+from toolsAction.beActions.process_selfcheck_excel import select_self_check_file
 from toolsAction.beActions.count_code import count_code
 
 
@@ -75,9 +75,9 @@ class BackEndTab:
         self.file_listbox.pack(side=tk.LEFT, fill=tk.BOTH, expand=True)
         x_scrollbar.config(command=self.file_listbox.xview)
 
-        # === [2] COMMENT GENERATOR ===
+        # === [2] COMMENT & UNIT TEST GENERATOR ===
         comment_frame = tk.LabelFrame(
-            frame_input, text="Tạo Comment cho File", bg="lightgray"
+            frame_input, text="Tạo Comment cho File & Unit Test", bg="lightgray"
         )
         comment_frame.grid(row=1, column=0, sticky="ew", pady=10)
 
@@ -111,7 +111,14 @@ class BackEndTab:
             text="Tạo Comment",
             command=lambda: generate_comment(self),
             width=25,
-        ).pack(pady=5, anchor="center")
+        ).pack(pady=(5, 2), anchor="center")
+
+        tk.Button(
+            comment_frame,
+            text="Sinh Unit Test (Dialog)",
+            command=self.check_and_open_unittest_dialog,
+            width=25,
+        ).pack(pady=(0, 5), anchor="center")
 
         # === [3] FILE CHỌN & DTO === (di chuyển xuống cuối)
         file_frame = tk.LabelFrame(
@@ -139,31 +146,17 @@ class BackEndTab:
             width=25,
         ).pack(pady=2, anchor="center")
 
-        # === [4] UNIT TEST ===
-        tk.Button(
-            frame_input,
-            text="Sinh Unit Test (Dialog)",
-            command=lambda: UnitTestDialog(self.tab),
-            width=25,
-        ).grid(row=3, column=0, pady=20, sticky="n")
-
         # === OUTPUT TEXT ===
         self.output_text = scrolledtext.ScrolledText(frame_output, wrap=tk.WORD)
         self.output_text.grid(row=0, column=0, sticky="nsew")
 
+    def check_and_open_unittest_dialog(self):
+        screen_code = self.screen_code_entry.get().strip()
 
-def select_self_check_file(self):
-    from tkinter import filedialog
+        if not screen_code:
+            messagebox.showwarning(
+                "Thiếu thông tin", "Vui lòng nhập đầy đủ Tên tác giả và Mã màn hình."
+            )
+            return
 
-    file_path = filedialog.askopenfilename(
-        title="Chọn file Self Check (Excel)",
-        filetypes=[("Excel files", "*.xlsx *.xls")],
-    )
-    if file_path:
-        process_selfcheck_excel(
-            file_path=file_path,
-            label_widget=self.self_check_label,
-            listbox_widget=self.file_listbox,
-            screen_code_entry=self.screen_code_entry,
-            author_entry=self.author_entry,
-        )
+        UnitTestDialog(self.tab, screen_code=screen_code)

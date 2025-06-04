@@ -1,6 +1,6 @@
 import tkinter as tk
 from tkinter import scrolledtext, ttk
-from tkinterdnd2 import TkinterDnD, DND_FILES
+from tkinterdnd2 import DND_FILES
 import os
 import pandas as pd
 from tkinter import scrolledtext, filedialog
@@ -11,8 +11,7 @@ from toolsAction.feActions.title_checker import check_title_comment
 from toolsAction.feActions.css_checker import check_css_color_main
 from toolsAction.feActions.hardcode_checker import check_hardcode_jp
 from toolsAction.feActions.console_checker import check_console_log
-from toolsAction.feActions.jsdoc_checker import check_jsdoc
-from toolsAction.feActions.vue_order_checker import check_vue_order_main
+
 from toolsAction.feActions.english_comment_checker import check_english_comments_main
 from toolsAction.feActions.hardcode_value_checker import check_hardcoded_values_main
 from PIL import Image, ImageTk
@@ -23,95 +22,178 @@ class FrontEndTab:
         self.tab = ttk.Frame(tab_parent, style="Custom.TFrame")
         tab_parent.add(self.tab, text="🌐 Front-End")
         self.icons = {}
+        self.eslint_running = False
+        self.eslint_thread = None
         self.init_ui()
 
     def load_icon(self, name, size=(24, 24)):
-        path = os.path.join(os.path.dirname(__file__), 'assets', name)
+        path = os.path.join(os.path.dirname(__file__), "assets", name)
         if os.path.exists(path):
-            img = Image.open(path).resize(size, Image.LANCZOS)
+            img = Image.open(path).resize(size, Image.Resampling.LANCZOS)
             return ImageTk.PhotoImage(img)
         return None
 
     def init_ui(self):
         style = ttk.Style()
         style.configure("Custom.TFrame", background="#f5f7fa")
-        style.configure("Custom.TLabelframe", background="#e3eafc", borderwidth=2, relief="ridge")
-        style.configure("Custom.TButton", font=("Segoe UI", 10), padding=6, background="#fff", foreground="#222", borderwidth=1, relief="ridge")
-        style.map("Custom.TButton",
-            background=[('active', '#e3eafc'), ('disabled', '#f0f0f0')],
-            foreground=[('active', '#0d47a1'), ('disabled', '#888')],
-            bordercolor=[('active', '#2d5be3'), ('!active', '#b0c4de')]
+        style.configure(
+            "Custom.TLabelframe", background="#e3eafc", borderwidth=2, relief="ridge"
+        )
+        style.configure(
+            "Custom.TButton",
+            font=("Segoe UI", 10),
+            padding=6,
+            background="#fff",
+            foreground="#222",
+            borderwidth=1,
+            relief="ridge",
+        )
+        style.map(
+            "Custom.TButton",
+            background=[("active", "#e3eafc"), ("disabled", "#f0f0f0")],
+            foreground=[("active", "#0d47a1"), ("disabled", "#888")],
+            bordercolor=[("active", "#2d5be3"), ("!active", "#b0c4de")],
         )
         style.configure("Custom.TLabel", background="#f5f7fa", font=("Segoe UI", 10))
-        style.configure("Custom.TLabelframe.Label", font=("Segoe UI", 11, "bold"), foreground="#2d5be3")
+        style.configure(
+            "Custom.TLabelframe.Label",
+            font=("Segoe UI", 11, "bold"),
+            foreground="#2d5be3",
+        )
 
         self.root = self.tab
         self.root.title = lambda title: None
         self.root.geometry = lambda geom: None
 
         self.top_frame = tk.Frame(self.root, bg="#f5f7fa")
-        self.top_frame.pack(fill='x', padx=16, pady=(16, 8))
+        self.top_frame.pack(fill="x", padx=16, pady=(16, 8))
 
         self.frame_input = ttk.LabelFrame(
-            self.top_frame, text="🔹 Nhập danh sách path cần kiểm tra", padding=12, style="Custom.TLabelframe")
-        self.frame_input.pack(side=tk.LEFT, fill='both', expand=True, padx=(0, 8))
+            self.top_frame,
+            text="🔹 Nhập danh sách path cần kiểm tra",
+            padding=12,
+            style="Custom.TLabelframe",
+        )
+        self.frame_input.pack(side=tk.LEFT, fill="both", expand=True, padx=(0, 8))
 
         self.selfcheck_frame = tk.Frame(self.frame_input, bg="#e3eafc")
-        self.selfcheck_frame.pack(fill='x', pady=(0, 8))
+        self.selfcheck_frame.pack(fill="x", pady=(0, 8))
 
-        upload_icon = self.load_icon('upload.png')
+        upload_icon = self.load_icon("upload.png")
         self.upload_selfcheck_btn = tk.Button(
-            self.selfcheck_frame, text="📂 Tải file Self-check", image=upload_icon, compound=tk.LEFT, command=self.upload_selfcheck, bg="#fff", fg="#222", font=("Segoe UI", 10, "bold"), relief=tk.RIDGE, bd=1, activebackground="#e3eafc", activeforeground="#0d47a1")
+            self.selfcheck_frame,
+            text="📂 Tải file Self-check",
+            image=upload_icon,
+            compound=tk.LEFT,
+            command=self.upload_selfcheck,
+            bg="#fff",
+            fg="#222",
+            font=("Segoe UI", 10, "bold"),
+            relief=tk.RIDGE,
+            bd=1,
+            activebackground="#e3eafc",
+            activeforeground="#0d47a1",
+        )
         self.upload_selfcheck_btn.image = upload_icon
         self.upload_selfcheck_btn.pack(side=tk.LEFT)
 
         self.selfcheck_label = tk.Label(
-            self.selfcheck_frame, text="Chưa chọn file", fg="gray", bg="#e3eafc", font=("Segoe UI", 10, "italic"))
+            self.selfcheck_frame,
+            text="Chưa chọn file",
+            fg="gray",
+            bg="#e3eafc",
+            font=("Segoe UI", 10, "italic"),
+        )
         self.selfcheck_label.pack(side=tk.LEFT, padx=(10, 0))
 
         self.path_input = scrolledtext.ScrolledText(
-            self.frame_input, height=10, wrap=tk.WORD, font=("Consolas", 10), bg="#fafdff", relief=tk.GROOVE, borderwidth=2)
-        self.path_input.pack(fill='both', expand=True)
+            self.frame_input,
+            height=10,
+            wrap=tk.WORD,
+            font=("Consolas", 10),
+            bg="#fafdff",
+            relief=tk.GROOVE,
+            borderwidth=2,
+        )
+        self.path_input.pack(fill="both", expand=True)
 
         self.path_input.drop_target_register(DND_FILES)
-        self.path_input.dnd_bind('<<Drop>>', self.handle_drop)
+        self.path_input.dnd_bind("<<Drop>>", self.handle_drop)
 
         self.frame_future = ttk.LabelFrame(
-            self.top_frame, text="🧩 Tải lên tài liệu (Excel)", padding=12, style="Custom.TLabelframe")
-        self.frame_future.pack(side=tk.LEFT, fill='both', expand=True, padx=(8, 0))
+            self.top_frame,
+            text="🧩 Tải lên tài liệu (Excel)",
+            padding=12,
+            style="Custom.TLabelframe",
+        )
+        self.frame_future.pack(side=tk.LEFT, fill="both", expand=True, padx=(8, 0))
 
-        upload_excel_icon = self.load_icon('excel.png')
+        upload_excel_icon = self.load_icon("excel.png")
         self.upload_excel_btn = tk.Button(
-            self.frame_future, text="📂 Tải file tài liệu", image=upload_excel_icon, compound=tk.LEFT, command=self.upload_excel_docs, bg="#fff", fg="#222", font=("Segoe UI", 10, "bold"), relief=tk.RIDGE, bd=1, activebackground="#e3eafc", activeforeground="#0d47a1")
+            self.frame_future,
+            text="📂 Tải file tài liệu",
+            image=upload_excel_icon,
+            compound=tk.LEFT,
+            command=self.upload_excel_docs,
+            bg="#fff",
+            fg="#222",
+            font=("Segoe UI", 10, "bold"),
+            relief=tk.RIDGE,
+            bd=1,
+            activebackground="#e3eafc",
+            activeforeground="#0d47a1",
+        )
         self.upload_excel_btn.image = upload_excel_icon
-        self.upload_excel_btn.pack(anchor='nw')
+        self.upload_excel_btn.pack(anchor="nw")
 
         self.excel_label = tk.Label(
-            self.frame_future, text="Chưa chọn file", fg="gray", bg="#e3eafc", font=("Segoe UI", 10, "italic"))
-        self.excel_label.pack(anchor='nw', pady=(5, 5))
+            self.frame_future,
+            text="Chưa chọn file",
+            fg="gray",
+            bg="#e3eafc",
+            font=("Segoe UI", 10, "italic"),
+        )
+        self.excel_label.pack(anchor="nw", pady=(5, 5))
 
         self.excel_output = scrolledtext.ScrolledText(
-            self.frame_future, height=6, wrap=tk.WORD, font=("Consolas", 10), bg="#fafdff", relief=tk.GROOVE, borderwidth=2)
-        self.excel_output.pack(fill='both', expand=True)
+            self.frame_future,
+            height=6,
+            wrap=tk.WORD,
+            font=("Consolas", 10),
+            bg="#fafdff",
+            relief=tk.GROOVE,
+            borderwidth=2,
+        )
+        self.excel_output.pack(fill="both", expand=True)
 
         self.excel_output.drop_target_register(DND_FILES)
-        self.excel_output.dnd_bind('<<Drop>>', self.handle_docs_drop)
+        self.excel_output.dnd_bind("<<Drop>>", self.handle_docs_drop)
 
         self.author_subframe = tk.Frame(self.frame_future, bg="#e3eafc")
-        self.author_subframe.pack(fill='x', pady=(10, 0))
+        self.author_subframe.pack(fill="x", pady=(10, 0))
 
-        tk.Label(self.author_subframe, text="👤 Nhập tên tác giả:", bg="#e3eafc", font=("Segoe UI", 10, "bold")).pack(side=tk.LEFT, padx=(0, 10))
+        tk.Label(
+            self.author_subframe,
+            text="👤 Nhập tên tác giả:",
+            bg="#e3eafc",
+            font=("Segoe UI", 10, "bold"),
+        ).pack(side=tk.LEFT, padx=(0, 10))
         self.author_var = tk.StringVar()
         self.author_var.trace_add("write", self.convert_author_to_uppercase)
         self.author_entry = tk.Entry(
-            self.author_subframe, textvariable=self.author_var, font=("Consolas", 10), relief=tk.GROOVE, borderwidth=2)
-        self.author_entry.pack(side=tk.LEFT, fill='x', expand=True)
+            self.author_subframe,
+            textvariable=self.author_var,
+            font=("Consolas", 10),
+            relief=tk.GROOVE,
+            borderwidth=2,
+        )
+        self.author_entry.pack(side=tk.LEFT, fill="x", expand=True)
 
         btn_frame = tk.Frame(self.root, bg="#f5f7fa")
         btn_frame.pack(pady=(0, 16))
         btn_width = 20
 
-        self.progress = ttk.Progressbar(self.root, mode='indeterminate', length=200)
+        self.progress = ttk.Progressbar(self.root, mode="indeterminate", length=200)
         self.progress.pack(pady=(0, 5))
         self.progress.pack_forget()
 
@@ -127,7 +209,7 @@ class FrontEndTab:
             ("🧮 Count Lines", self.on_count_lines),
             ("📘 Check JSDoc", self.on_check_jsdoc, True),
             ("⚡ Check Vue", self.on_check_vue_order, True),
-            ("🔄 Clear All", self.clear_all)
+            ("🔄 Clear All", self.clear_all),
         ]
         self.buttons = []
         col_count = 6
@@ -152,7 +234,7 @@ class FrontEndTab:
                 highlightbackground="#b0c4de",
                 padx=8,
                 pady=8,
-                disabledforeground="#888"
+                disabledforeground="#888",
             )
             if is_disabled:
                 b.config(state=tk.DISABLED, bg="#f0f0f0", fg="#888")
@@ -163,35 +245,53 @@ class FrontEndTab:
             btn_frame.grid_columnconfigure(i, weight=1)
 
         self.status_label = tk.Label(
-            self.root, text="", fg="#2d5be3", bg="#f5f7fa", font=("Segoe UI", 12, "italic"))
+            self.root,
+            text="",
+            fg="#2d5be3",
+            bg="#f5f7fa",
+            font=("Segoe UI", 12, "italic"),
+        )
         self.status_label.pack(pady=(0, 5))
 
         self.output_text = scrolledtext.ScrolledText(
-            self.root, wrap=tk.WORD, font=("Consolas", 10), bg="#fafdff", relief=tk.GROOVE, borderwidth=2)
-        self.output_text.pack(expand=True, fill='both', padx=16, pady=16)
+            self.root,
+            wrap=tk.WORD,
+            font=("Consolas", 10),
+            bg="#fafdff",
+            relief=tk.GROOVE,
+            borderwidth=2,
+        )
+        self.output_text.pack(expand=True, fill="both", padx=16, pady=16)
 
         self.output_text.tag_configure(
-            "error", foreground="red", font=("Consolas", 12, "bold"))
+            "error", foreground="red", font=("Consolas", 12, "bold")
+        )
         self.output_text.tag_configure(
-            "highlight", foreground="blue", font=("Consolas", 12, "italic"))
+            "highlight", foreground="blue", font=("Consolas", 12, "italic")
+        )
         self.output_text.tag_configure(
-            "warning", foreground="#FF6600", font=("Consolas", 12, "italic"))
+            "warning", foreground="#FF6600", font=("Consolas", 12, "italic")
+        )
         self.output_text.tag_configure(
-            "success", foreground="green", font=("Consolas", 12, "italic"))
+            "success", foreground="green", font=("Consolas", 12, "italic")
+        )
         self.output_text.tag_configure(
-            "title-color", foreground="blue", font=("Consolas", 12, "bold"))
+            "title-color", foreground="blue", font=("Consolas", 12, "bold")
+        )
         self.output_text.tag_configure(
-            "footer-color", foreground="gray", font=("Consolas", 12, "bold"))
+            "footer-color", foreground="gray", font=("Consolas", 12, "bold")
+        )
 
     def handle_drop(self, event):
         try:
             file_path = event.data
-            if file_path.startswith('{'):
+            if file_path.startswith("{"):
                 file_path = file_path[1:-1]
 
-            if not file_path.lower().endswith(('.xlsx', '.xls')):
+            if not file_path.lower().endswith((".xlsx", ".xls")):
                 self.selfcheck_label.config(
-                    text="❌ Chỉ chấp nhận file Excel", fg="red")
+                    text="❌ Chỉ chấp nhận file Excel", fg="red"
+                )
                 return
 
             self.process_selfcheck_excel(file_path)
@@ -200,8 +300,7 @@ class FrontEndTab:
 
     def process_selfcheck_excel(self, file_path):
         if not file_path:
-            self.selfcheck_label.config(
-                text="❌ Không có file nào được chọn", fg="red")
+            self.selfcheck_label.config(text="❌ Không có file nào được chọn", fg="red")
             self.path_input.delete("1.0", tk.END)
             return
 
@@ -211,10 +310,12 @@ class FrontEndTab:
 
         try:
             workbook = pd.read_excel(
-                file_path, sheet_name='機能別ソース一覧', header=None)
+                file_path, sheet_name="機能別ソース一覧", header=None
+            )
         except Exception as e:
             self.path_input.insert(
-                tk.END, f"❌ Lỗi khi đọc sheet 機能別ソース一覧: {str(e)}\n")
+                tk.END, f"❌ Lỗi khi đọc sheet 機能別ソース一覧: {str(e)}\n"
+            )
             return
 
         result = []
@@ -234,12 +335,11 @@ class FrontEndTab:
     def handle_docs_drop(self, event):
         try:
             file_path = event.data
-            if file_path.startswith('{'):
+            if file_path.startswith("{"):
                 file_path = file_path[1:-1]
 
-            if not file_path.lower().endswith(('.xlsx', '.xls')):
-                self.excel_label.config(
-                    text="❌ Chỉ chấp nhận file Excel", fg="red")
+            if not file_path.lower().endswith((".xlsx", ".xls")):
+                self.excel_label.config(text="❌ Chỉ chấp nhận file Excel", fg="red")
                 return
 
             self.process_excel_docs(file_path)
@@ -248,8 +348,7 @@ class FrontEndTab:
 
     def process_excel_docs(self, file_path):
         if not file_path:
-            self.excel_label.config(
-                text="❌ Không có file nào được chọn", fg="red")
+            self.excel_label.config(text="❌ Không có file nào được chọn", fg="red")
             self.excel_output.delete("1.0", tk.END)
             return
 
@@ -258,61 +357,65 @@ class FrontEndTab:
         self.excel_output.delete("1.0", tk.END)
 
         try:
-            workbook = pd.read_excel(file_path, sheet_name='項目一覧', header=None)
+            workbook = pd.read_excel(file_path, sheet_name="項目一覧", header=None)
         except Exception as e:
             self.excel_output.insert(
-                tk.END, f"❌ Lỗi khi đọc sheet 項目一覧: {str(e)}\n")
+                tk.END, f"❌ Lỗi khi đọc sheet 項目一覧: {str(e)}\n"
+            )
             return
 
         result = []
         mark_gui = None
 
         for col_idx, cell in enumerate(workbook.iloc[0]):
-            if str(cell).strip() == "画面No." or str(cell).strip() == "画面No．" or "画面No" in str(cell).strip():
+            if (
+                str(cell).strip() == "画面No."
+                or str(cell).strip() == "画面No．"
+                or "画面No" in str(cell).strip()
+            ):
                 mark_gui = col_idx
                 break
 
         for _, row in workbook.iterrows():
-            if len(row) > mark_gui+1:
-                code = row[mark_gui+1]
-                name = row[mark_gui+1+1] if len(row) > mark_gui+1+1 else ''
-                if pd.notna(code) and isinstance(code, str) and 'Or' in code:
-                    result.append(
-                        {'code': code.strip(), 'name': str(name).strip()})
+            if len(row) > mark_gui + 1:
+                code = row[mark_gui + 1]
+                name = row[mark_gui + 1 + 1] if len(row) > mark_gui + 1 + 1 else ""
+                if pd.notna(code) and isinstance(code, str) and "Or" in code:
+                    result.append({"code": code.strip(), "name": str(name).strip()})
 
         seen = set()
         unique_result = []
         if mark_gui is not None:
             try:
                 item_gui = {
-                    'code': str(workbook.iloc[0, mark_gui + 1]).strip(),
-                    'name': str(workbook.iloc[1, mark_gui + 1]).strip()
+                    "code": str(workbook.iloc[0, mark_gui + 1]).strip(),
+                    "name": str(workbook.iloc[1, mark_gui + 1]).strip(),
                 }
                 unique_result.append(item_gui)
             except Exception as e:
                 self.excel_output.insert(
-                    tk.END, f"⚠️ Lỗi khi lấy GUI code/name: {str(e)}\n")
+                    tk.END, f"⚠️ Lỗi khi lấy GUI code/name: {str(e)}\n"
+                )
 
         for item in result:
-            if item['code'] not in seen:
-                seen.add(item['code'])
+            if item["code"] not in seen:
+                seen.add(item["code"])
                 unique_result.append(item)
 
         for item in unique_result:
-            self.excel_output.insert(
-                tk.END, f"🔹 {item['code']} - {item['name']}\n")
+            self.excel_output.insert(tk.END, f"🔹 {item['code']} - {item['name']}\n")
 
     def upload_selfcheck(self):
         file_path = filedialog.askopenfilename(
             title="Chọn file Self-check Excel",
-            filetypes=[("Excel files", "*.xlsx *.xls")]
+            filetypes=[("Excel files", "*.xlsx *.xls")],
         )
         self.process_selfcheck_excel(file_path)
 
     def upload_excel_docs(self):
         file_path = filedialog.askopenfilename(
             title="Chọn file Excel tài liệu",
-            filetypes=[("Excel files", "*.xlsx *.xls")]
+            filetypes=[("Excel files", "*.xlsx *.xls")],
         )
         self.process_excel_docs(file_path)
 
@@ -330,18 +433,32 @@ class FrontEndTab:
     def stop_loading(self):
         self.progress.stop()
         self.progress.pack_forget()
+        self.eslint_running = False
+        self.update_eslint_button()
         self.set_running_state(False)
 
     def on_run_eslint(self):
         self.output_text.delete("1.0", tk.END)
+        if self.eslint_running:
+            # Nếu đang chạy thì yêu cầu hủy
+            self.stop_loading()
+            self.eslint_running = False
+            self.update_eslint_button()
+            return
+
+        self.eslint_running = True
+        self.update_eslint_button()
         self.start_loading()
-        threading.Thread(target=self._run_eslint_thread).start()
+        self._eslint_thread = threading.Thread(target=self._run_eslint_thread)
+        self._eslint_thread.start()
 
     def _run_eslint_thread(self):
         try:
             run_eslint(self)
         finally:
+            self.eslint_running = False
             self.stop_loading()
+            self.update_eslint_button()
 
     def on_count_lines(self):
         self.output_text.delete("1.0", tk.END)
@@ -400,11 +517,11 @@ class FrontEndTab:
 
     def on_check_jsdoc(self):
         self.output_text.delete("1.0", tk.END)
-        self.output_text.insert('end', '📘 Tính năng tạm ngừng\n', 'warning')
+        self.output_text.insert("end", "📘 Tính năng tạm ngừng\n", "warning")
 
     def on_check_vue_order(self):
         self.output_text.delete("1.0", tk.END)
-        self.output_text.insert('end', '⚡ Tính năng tạm ngừng\n', 'warning')
+        self.output_text.insert("end", "⚡ Tính năng tạm ngừng\n", "warning")
 
     def on_check_english_comments(self):
         self.output_text.delete("1.0", tk.END)
@@ -431,17 +548,20 @@ class FrontEndTab:
     def get_file_list(self):
         self.output_text.delete("1.0", tk.END)
         input_text = self.path_input.get("1.0", tk.END)
-        files = [line.strip()
-                 for line in input_text.splitlines() if line.strip()]
+        files = [line.strip() for line in input_text.splitlines() if line.strip()]
         if not files:
             self.output_text.insert(
-                tk.END, "❌ Vui lòng nhập danh sách file.\n", "error")
+                tk.END, "❌ Vui lòng nhập danh sách file.\n", "error"
+            )
         return files
 
     def display_output(self, text):
         for line in text.splitlines():
-            tag = "error" if any(keyword in line.lower()
-                                 for keyword in ["error", "✖", "❌"]) else None
+            tag = (
+                "error"
+                if any(keyword in line.lower() for keyword in ["error", "✖", "❌"])
+                else None
+            )
             self.output_text.insert(tk.END, line + "\n", tag)
 
     def clear_all(self):
@@ -456,6 +576,16 @@ class FrontEndTab:
     def set_running_state(self, running: bool):
         state = tk.DISABLED if running else tk.NORMAL
         for btn in self.buttons:
+            # Không disable nút ESLint để có thể hủy tiến trình
+            if "ESLint" in btn.cget("text"):
+                continue
             btn.config(state=state)
-        self.status_label.config(
-            text="⏳ Đang xử lý..." if running else "✅ Sẵn sàng.")
+        self.status_label.config(text="⏳ Đang xử lý..." if running else "✅ Sẵn sàng.")
+
+    def update_eslint_button(self):
+        for btn in self.buttons:
+            if "ESLint" in btn.cget("text"):
+                if self.eslint_running:
+                    btn.config(text="⛔ Hủy ESLint")
+                else:
+                    btn.config(text="🚀 Run ESLint")

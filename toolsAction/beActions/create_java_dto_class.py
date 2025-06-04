@@ -7,7 +7,7 @@ def generated_dto(tab_instance):
     if not tab_instance.file_path:
         print("Bạn chưa chọn file Excel!")
         return
-
+    tab_instance.output_text.delete(1.0, tk.END)
     request_sheet, response_sheet = find_request_and_response_sheets(
         tab_instance.file_path
     )
@@ -24,6 +24,8 @@ def generated_dto(tab_instance):
         headers = {
             "フィールド名": data_by_header["フィールド名"],
             "データ構造": data_by_header["データ構造"],
+            "データタイプ": data_by_header["データタイプ"],
+            "必須": data_by_header["必須"],
         }
 
         java_code = convert_to_java_class(sheet.title, headers, hierarchy)
@@ -69,6 +71,9 @@ def find_request_and_response_sheets(file_path):
         return None, None
 
 
+from openpyxl.utils import get_column_letter
+
+
 def find_header_ranges_in_sheet(sheet):
     target_headers = ["フィールド名", "データ構造", "必須", "データタイプ"]
     header_ranges = {}
@@ -85,7 +90,7 @@ def find_header_ranges_in_sheet(sheet):
 
             for idx, value in enumerate(headers_in_row):
                 if value in target_headers:
-                    if current_header is not None:
+                    if current_header is not None and start_idx is not None:
                         end_idx = idx - 1 if idx - 1 >= start_idx else idx
                         start_col = get_column_letter(start_idx + 1)
                         end_col = get_column_letter(end_idx + 1)
@@ -99,7 +104,7 @@ def find_header_ranges_in_sheet(sheet):
                 elif value is None and current_header:
                     continue
                 else:
-                    if current_header:
+                    if current_header and start_idx is not None:
                         end_idx = idx - 1 if idx - 1 >= start_idx else idx
                         start_col = get_column_letter(start_idx + 1)
                         end_col = get_column_letter(end_idx + 1)
@@ -111,7 +116,7 @@ def find_header_ranges_in_sheet(sheet):
                         current_header = None
                         start_idx = None
 
-            if current_header:
+            if current_header and start_idx is not None:
                 end_idx = len(headers_in_row) - 1
                 start_col = get_column_letter(start_idx + 1)
                 end_col = get_column_letter(end_idx + 1)
@@ -189,39 +194,116 @@ def convert_to_java_class(sheet_name: str, headers: dict, hierarchy: dict) -> st
     def camel_case(s: str):
         return s[0].lower() + s[1:] if s else s
 
+    def pascal_case(s: str):
+        return s[0].upper() + s[1:] if s else s
+
     result.append("@Getter\n@Setter")
     result.append(f"public class {class_name} extends IDtoImpl " + "{")
     result.append("    /** serialVersionUID. */")
     result.append("    private static final long serialVersionUID = 1L;\n")
 
+    required_flags = headers.get("必須", [])
+    data_types = headers.get("データタイプ", [])
     skip_field_names = {camel_case(parent) for parent in hierarchy}
     for children in hierarchy.values():
         skip_field_names.update(camel_case(child) for child in children)
 
-    for name, field in zip(headers["フィールド名"], headers["データ構造"]):
+    # === Flat fields ===
+    for idx, (name, field) in enumerate(
+        zip(headers["フィールド名"], headers["データ構造"])
+    ):
         field_var = field[0]
         if field_var in skip_field_names or field_var in [None, "None"]:
             continue
+
+        required = idx < len(required_flags) and str(required_flags[idx]).strip() != "-"
+        dtype = data_types[idx] if idx < len(data_types) else None
+        if dtype in [
+            "List<String>",
+            "List<Integer>",
+            "List<Boolean>",
+            "List<Double>",
+            "List<Float>",
+        ]:
+            java_type = "List<String>"
+        else:
+            java_type = "String"
+
         result.append(f"    {field_comment(name)}")
-        result.append(f"    private String {field_var};\n")
+        if required:
+            result.append("    @NotEmpty")
+        result.append(f"    private {java_type} {field_var};\n")
 
+    # === Hierarchical (nested class) fields ===
     for parent, children in hierarchy.items():
-        is_list = "List" in parent
         parent_var = camel_case(parent)
-        type_decl = f"List<{parent_var}>" if is_list else parent_var
+        parent_class = pascal_case(parent)
+        parent_comment = next(
+            (
+                name
+                for name, field in zip(headers["フィールド名"], headers["データ構造"])
+                if isinstance(field, list) and field[0] == parent
+            ),
+            parent,
+        )
+        parent_required = next(
+            (
+                required
+                for field, required in zip(
+                    headers["データ構造"], headers.get("必須", [])
+                )
+                if isinstance(field, list) and field[0] == parent
+            ),
+            "-",
+        )
+        parent_required_flag = str(parent_required).strip() != "-"
+        parent_datatype_raw = next(
+            (
+                dtype
+                for field, dtype in zip(
+                    headers["データ構造"], headers.get("データタイプ", [])
+                )
+                if isinstance(field, list) and field[0] == parent
+            ),
+            None,
+        )
 
-        result.append(f"    {field_comment(parent)}")
-        result.append(f"    private {type_decl} {parent_var};\n")
+        # Determine Java type
+        if parent_datatype_raw in ["List<String>", "List<Integer>"]:
+            java_type = "List<String>"
+        elif parent_datatype_raw == "List":
+            java_type = f"List<{parent_class}>"
+        else:
+            java_type = parent_class
+
+        result.append(f"    {field_comment(parent_comment)}")
+        if parent_required_flag:
+            result.append("    @NotEmpty")
+        result.append(f"    private {java_type} {parent_var};\n")
 
         result.append("    @Getter\n    @Setter")
-        result.append(f"    public static class {parent_var} " + "{")
+        result.append(f"    public static class {parent_class} " + "{")
         for child in children:
-            if child in headers["フィールド名"]:
-                idx = headers["フィールド名"].index(child)
-                field_name = headers["データ構造"][idx][0]
-            else:
-                field_name = camel_case(child)
-            result.append(f"        {field_comment(child)}")
+            comment = ""
+            field_name = camel_case(child)
+            child_required = False
+            for idx, (name, field) in enumerate(
+                zip(headers["フィールド名"], headers["データ構造"])
+            ):
+                field_candidate = field[0] if isinstance(field, list) else field
+                if field_candidate == child:
+                    comment = name
+                    field_name = camel_case(field_candidate)
+                    if (
+                        idx < len(required_flags)
+                        and str(required_flags[idx]).strip() != "-"
+                    ):
+                        child_required = True
+                    break
+
+            result.append(f"        {field_comment(comment)}")
+            if child_required:
+                result.append("        @NotEmpty")
             result.append(f"        private String {field_name};\n")
         result.append("    }\n")
 
