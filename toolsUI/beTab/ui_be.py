@@ -2,12 +2,16 @@ import tkinter as tk
 from tkinter import scrolledtext, messagebox
 from tkcalendar import DateEntry
 from toolsUI.beTab.unit_test_generater_dialog import UnitTestDialog
+from tkinter import scrolledtext
 from toolsAction.beActions.select_file import select_file
 from toolsAction.beActions.comment_generator import generate_comment
 from toolsAction.beActions.create_java_dto_class import generated_dto
-from tkinter import scrolledtext
 from toolsAction.beActions.process_selfcheck_excel import select_self_check_file
 from toolsAction.beActions.count_code import count_code
+from toolsAction.beActions.run_database_initialization import (
+    run_database_initialization,
+)
+from toolsAction.beActions.run_sql_folder import run_sql_from_folder
 
 
 class BackEndTab:
@@ -145,6 +149,26 @@ class BackEndTab:
             command=lambda: generated_dto(self),
             width=25,
         ).pack(pady=2, anchor="center")
+
+        # === [4] NÚT KHỞI TẠO DB ===
+        init_db_frame = tk.LabelFrame(
+            frame_input, text="Khởi tạo Cơ sở dữ liệu", bg="lightgray"
+        )
+        init_db_frame.grid(row=3, column=0, sticky="ew", pady=(0, 10))
+
+        tk.Button(
+            init_db_frame,
+            text="Khởi tạo DB",
+            command=lambda: run_database_initialization(self),
+            width=25,
+        ).pack(pady=5, anchor="center")
+
+        tk.Button(
+            init_db_frame,
+            text="Tạo Data từ thư mục SQL",
+            command=lambda: run_sql_from_folder(self),
+            width=25,
+        ).pack(pady=(0, 5), anchor="center")
 
         # === OUTPUT TEXT ===
         self.output_text = scrolledtext.ScrolledText(frame_output, wrap=tk.WORD)
