@@ -1,20 +1,20 @@
-import tkinter as tk
-from tkinter import scrolledtext, ttk
-from tkinterdnd2 import DND_FILES
 import os
-import pandas as pd
-from tkinter import scrolledtext, filedialog
 import threading
+import tkinter as tk
+from tkinter import filedialog, scrolledtext, ttk
+
+import pandas as pd
+from PIL import Image, ImageTk
+from tkinterdnd2 import DND_FILES
+
+from toolsAction.feActions.console_checker import check_console_log
+from toolsAction.feActions.css_checker import check_css_color_main
+from toolsAction.feActions.english_comment_checker import check_english_comments_main
 from toolsAction.feActions.eslint_tool import run_eslint
+from toolsAction.feActions.hardcode_checker import check_hardcode_jp
+from toolsAction.feActions.hardcode_value_checker import check_hardcoded_values_main
 from toolsAction.feActions.line_counter import count_lines
 from toolsAction.feActions.title_checker import check_title_comment
-from toolsAction.feActions.css_checker import check_css_color_main
-from toolsAction.feActions.hardcode_checker import check_hardcode_jp
-from toolsAction.feActions.console_checker import check_console_log
-
-from toolsAction.feActions.english_comment_checker import check_english_comments_main
-from toolsAction.feActions.hardcode_value_checker import check_hardcoded_values_main
-from PIL import Image, ImageTk
 
 
 class FrontEndTab:
@@ -36,9 +36,7 @@ class FrontEndTab:
     def init_ui(self):
         style = ttk.Style()
         style.configure("Custom.TFrame", background="#f5f7fa")
-        style.configure(
-            "Custom.TLabelframe", background="#e3eafc", borderwidth=2, relief="ridge"
-        )
+        style.configure("Custom.TLabelframe", background="#e3eafc", borderwidth=2, relief="ridge")
         style.configure(
             "Custom.TButton",
             font=("Segoe UI", 10),
@@ -62,8 +60,6 @@ class FrontEndTab:
         )
 
         self.root = self.tab
-        self.root.title = lambda title: None
-        self.root.geometry = lambda geom: None
 
         self.top_frame = tk.Frame(self.root, bg="#f5f7fa")
         self.top_frame.pack(fill="x", padx=16, pady=(16, 8))
@@ -191,7 +187,6 @@ class FrontEndTab:
 
         btn_frame = tk.Frame(self.root, bg="#f5f7fa")
         btn_frame.pack(pady=(0, 16))
-        btn_width = 20
 
         self.progress = ttk.Progressbar(self.root, mode="indeterminate", length=200)
         self.progress.pack(pady=(0, 5))
@@ -263,9 +258,7 @@ class FrontEndTab:
         )
         self.output_text.pack(expand=True, fill="both", padx=16, pady=16)
 
-        self.output_text.tag_configure(
-            "error", foreground="red", font=("Consolas", 12, "bold")
-        )
+        self.output_text.tag_configure("error", foreground="red", font=("Consolas", 12, "bold"))
         self.output_text.tag_configure(
             "highlight", foreground="blue", font=("Consolas", 12, "italic")
         )
@@ -289,9 +282,7 @@ class FrontEndTab:
                 file_path = file_path[1:-1]
 
             if not file_path.lower().endswith((".xlsx", ".xls")):
-                self.selfcheck_label.config(
-                    text="❌ Chỉ chấp nhận file Excel", fg="red"
-                )
+                self.selfcheck_label.config(text="❌ Chỉ chấp nhận file Excel", fg="red")
                 return
 
             self.process_selfcheck_excel(file_path)
@@ -309,18 +300,14 @@ class FrontEndTab:
         self.path_input.delete("1.0", tk.END)
 
         try:
-            workbook = pd.read_excel(
-                file_path, sheet_name="機能別ソース一覧", header=None
-            )
+            workbook = pd.read_excel(file_path, sheet_name="機能別ソース一覧", header=None)
         except Exception as e:
-            self.path_input.insert(
-                tk.END, f"❌ Lỗi khi đọc sheet 機能別ソース一覧: {str(e)}\n"
-            )
+            self.path_input.insert(tk.END, f"❌ Lỗi khi đọc sheet 機能別ソース一覧: {str(e)}\n")
             return
 
         result = []
         name = ""
-        for index, row in workbook.iterrows():
+        for _index, row in workbook.iterrows():
             if pd.notna(row[4]) and "KMD" in str(row[4]) and not name:
                 full_name = str(row[4]).strip()
                 if "KMD" in full_name:
@@ -359,9 +346,7 @@ class FrontEndTab:
         try:
             workbook = pd.read_excel(file_path, sheet_name="項目一覧", header=None)
         except Exception as e:
-            self.excel_output.insert(
-                tk.END, f"❌ Lỗi khi đọc sheet 項目一覧: {str(e)}\n"
-            )
+            self.excel_output.insert(tk.END, f"❌ Lỗi khi đọc sheet 項目一覧: {str(e)}\n")
             return
 
         result = []
@@ -377,7 +362,7 @@ class FrontEndTab:
                 break
 
         for _, row in workbook.iterrows():
-            if len(row) > mark_gui + 1:
+            if mark_gui is not None and len(row) > mark_gui + 1:
                 code = row[mark_gui + 1]
                 name = row[mark_gui + 1 + 1] if len(row) > mark_gui + 1 + 1 else ""
                 if pd.notna(code) and isinstance(code, str) and "Or" in code:
@@ -393,9 +378,7 @@ class FrontEndTab:
                 }
                 unique_result.append(item_gui)
             except Exception as e:
-                self.excel_output.insert(
-                    tk.END, f"⚠️ Lỗi khi lấy GUI code/name: {str(e)}\n"
-                )
+                self.excel_output.insert(tk.END, f"⚠️ Lỗi khi lấy GUI code/name: {str(e)}\n")
 
         for item in result:
             if item["code"] not in seen:
@@ -550,9 +533,7 @@ class FrontEndTab:
         input_text = self.path_input.get("1.0", tk.END)
         files = [line.strip() for line in input_text.splitlines() if line.strip()]
         if not files:
-            self.output_text.insert(
-                tk.END, "❌ Vui lòng nhập danh sách file.\n", "error"
-            )
+            self.output_text.insert(tk.END, "❌ Vui lòng nhập danh sách file.\n", "error")
         return files
 
     def display_output(self, text):

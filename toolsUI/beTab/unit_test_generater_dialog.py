@@ -1,6 +1,6 @@
-import tkinter as tk
-from tkinter import scrolledtext, ttk, messagebox
 import json
+import tkinter as tk
+from tkinter import messagebox, scrolledtext, ttk
 
 
 class UnitTestDialog(tk.Toplevel):
@@ -46,9 +46,7 @@ class UnitTestDialog(tk.Toplevel):
             command=lambda: beautify_json(self.json_text),
         ).pack(side=tk.RIGHT)
 
-        tk.Button(
-            self, text="Generate Unit Test Method", command=self.on_generate
-        ).pack(pady=5)
+        tk.Button(self, text="Generate Unit Test Method", command=self.on_generate).pack(pady=5)
 
         frame_output_text = tk.Frame(self)
         frame_output_text.pack(fill=tk.BOTH, expand=True, padx=40, pady=(10, 20))
@@ -63,14 +61,10 @@ class UnitTestDialog(tk.Toplevel):
         json_raw = self.json_text.get("1.0", tk.END)
 
         if not screen_code or not service_name or not json_raw.strip():
-            messagebox.showwarning(
-                "Thiếu thông tin", "Vui lòng nhập đủ thông tin cần thiết."
-            )
+            messagebox.showwarning("Thiếu thông tin", "Vui lòng nhập đủ thông tin cần thiết.")
             return
 
-        java_code = create_unit_test_method(
-            screen_code, service_name, endpoint, json_raw
-        )
+        java_code = create_unit_test_method(screen_code, service_name, endpoint, json_raw)
         self.output_text.delete("1.0", tk.END)
         self.output_text.insert(tk.END, java_code)
 
@@ -94,19 +88,11 @@ def extract_gui(screen_code: str):
 
 
 def create_unit_test_method(screen_code, service_name, endpoint, json_raw):
-    method_name = (
-        "test" + screen_code + "".join(x.capitalize() for x in service_name.split("_"))
-    )
-    log_label = (
-        f"{screen_code} {''.join(x.capitalize() for x in service_name.split('_'))}"
-    )
+    method_name = "test" + screen_code + "".join(x.capitalize() for x in service_name.split("_"))
+    log_label = f"{screen_code} {''.join(x.capitalize() for x in service_name.split('_'))}"
     method_comment = screen_code
-    method_name = (
-        "test" + screen_code + "".join(x.capitalize() for x in service_name.split("_"))
-    )
-    log_label = (
-        f"{screen_code} {''.join(x.capitalize() for x in service_name.split('_'))}"
-    )
+    method_name = "test" + screen_code + "".join(x.capitalize() for x in service_name.split("_"))
+    log_label = f"{screen_code} {''.join(x.capitalize() for x in service_name.split('_'))}"
     endpoint_url = f"/cmn/{endpoint}"
     class_name = extract_gui(screen_code) + "Tests"
 
@@ -117,16 +103,10 @@ def create_unit_test_method(screen_code, service_name, endpoint, json_raw):
         return f"// JSON không hợp lệ: {str(e)}"
 
     lines = pretty_json.splitlines()
-    java_json = (
-        '        String parameterMapJson = "' + lines[0].replace('"', '\\"') + '" +\n'
-    )
+    java_json = '        String parameterMapJson = "' + lines[0].replace('"', '\\"') + '" +\n'
     for line in lines[1:-1]:
-        java_json += (
-            '                                "' + line.replace('"', '\\"') + '" +\n'
-        )
-    java_json += (
-        '                                "' + lines[-1].replace('"', '\\"') + '";'
-    )
+        java_json += '                                "' + line.replace('"', '\\"') + '" +\n'
+    java_json += '                                "' + lines[-1].replace('"', '\\"') + '";'
 
     return f"""@RunWith(SpringRunner.class)
 @SpringBootTest

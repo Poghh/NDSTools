@@ -1,6 +1,6 @@
-import tkinter as tk
 import os
-import re
+import tkinter as tk
+
 
 def check_title_comment(self):
     self.set_running_state(True)
@@ -12,7 +12,9 @@ def check_title_comment(self):
 
     author_name = self.author_entry.get().strip()
     if not author_name:
-        self.output_text.insert(tk.END, "❌ Vui lòng nhập tên tác giả trước khi kiểm tra comment.\n", "error")
+        self.output_text.insert(
+            tk.END, "❌ Vui lòng nhập tên tác giả trước khi kiểm tra comment.\n", "error"
+        )
         self.set_running_state(False)
         return
 
@@ -31,37 +33,52 @@ def check_title_comment(self):
                 component_map[code] = name
                 if code.startswith("GUI"):
                     gui_code = code
-            except:
+            except Exception:
                 continue
-    
+
     gui_name = component_map.get(gui_code)
-    if not gui_name:
-        self.output_text.insert(tk.END, f"⚠️ {file_name}: Không tìm thấy tên màn hình từ Excel\n", "error")
 
     for file_path in files:
         file_name = os.path.basename(file_path)
+        if not gui_name:
+            self.output_text.insert(
+                tk.END, f"⚠️ {file_name}: Không tìm thấy tên màn hình từ Excel\n", "error"
+            )
 
-        if (file_name.startswith("GUI") and file_name.endswith(".vue")):
+        if file_name.startswith("GUI") and file_name.endswith(".vue"):
             check_gui_file(self, file_path, file_name, gui_code, gui_name, author_name)
         elif file_name.startswith("Or") and file_name.endswith(".vue"):
-            check_or_file(self, file_path, file_name, gui_code, gui_name, author_name, component_map)
+            check_or_file(
+                self, file_path, file_name, gui_code, gui_name, author_name, component_map
+            )
         elif file_name.startswith("Or") and file_name.endswith(".constants.ts"):
-            check_constants_file(self, file_path, file_name, gui_code, gui_name, author_name, component_map)
+            check_constants_file(
+                self, file_path, file_name, gui_code, gui_name, author_name, component_map
+            )
         elif file_name.startswith("Or") and file_name.endswith(".logic.ts"):
-            check_logic_file(self, file_path, file_name, gui_code, gui_name, author_name, component_map)
+            check_logic_file(
+                self, file_path, file_name, gui_code, gui_name, author_name, component_map
+            )
         elif file_name.startswith("Or") and file_name.endswith(".type.d.ts"):
-            check_type_file(self, file_path, file_name, gui_code, gui_name, author_name, component_map)
+            check_type_file(
+                self, file_path, file_name, gui_code, gui_name, author_name, component_map
+            )
         elif file_name.endswith("Type.d.ts"):
-            check_type_2_file(self, file_path, file_name, gui_code, gui_name, author_name, component_map)
+            check_type_2_file(
+                self, file_path, file_name, gui_code, gui_name, author_name, component_map
+            )
         else:
-            self.output_text.insert(tk.END, f"❌ {file_name}: Không phải file cần kiểm tra\n", "warning")
+            self.output_text.insert(
+                tk.END, f"❌ {file_name}: Không phải file cần kiểm tra\n", "warning"
+            )
 
     self.output_text.insert(tk.END, "\n✅ Kiểm tra hoàn tất.\n")
     self.set_running_state(False)
 
+
 def check_gui_file(self, file_path, file_name, gui_code, gui_name, author_name):
     try:
-        with open(file_path, "r", encoding="utf-8") as f:
+        with open(file_path, encoding="utf-8") as f:
             content = f.read()
 
         expected = f"""/**
@@ -73,18 +90,23 @@ def check_gui_file(self, file_path, file_name, gui_code, gui_name, author_name):
  * @author KMD {author_name}
  */"""
 
-        check_file_content(self, file_path, file_name, content, expected, gui_code, gui_name, author_name)
+        check_file_content(
+            self, file_path, file_name, content, expected, gui_code, gui_name, author_name
+        )
     except Exception as e:
         self.output_text.insert(tk.END, f"❌ {file_name}: Lỗi đọc file - {str(e)}\n", "error")
+
 
 def check_or_file(self, file_path, file_name, gui_code, gui_name, author_name, component_map):
     or_code = file_name.replace(".vue", "")
     if or_code not in component_map:
-        self.output_text.insert(tk.END, f"❌ {file_name}: Không tìm thấy tên component từ Excel\n", "error")
+        self.output_text.insert(
+            tk.END, f"❌ {file_name}: Không tìm thấy tên component từ Excel\n", "error"
+        )
     else:
         or_name = component_map[or_code]
         try:
-            with open(file_path, "r", encoding="utf-8") as f:
+            with open(file_path, encoding="utf-8") as f:
                 content = f.read()
 
             expected = f"""/**
@@ -97,18 +119,34 @@ def check_or_file(self, file_path, file_name, gui_code, gui_name, author_name, c
  * @author KMD {author_name}
  */"""
 
-            check_file_content(self, file_path, file_name, content, expected, gui_code, gui_name, author_name, or_code, or_name)
+            check_file_content(
+                self,
+                file_path,
+                file_name,
+                content,
+                expected,
+                gui_code,
+                gui_name,
+                author_name,
+                or_code,
+                or_name,
+            )
         except Exception as e:
             self.output_text.insert(tk.END, f"❌ {file_name}: Lỗi đọc file - {str(e)}\n", "error")
 
-def check_constants_file(self, file_path, file_name, gui_code, gui_name, author_name, component_map):
+
+def check_constants_file(
+    self, file_path, file_name, gui_code, gui_name, author_name, component_map
+):
     or_code = file_name.replace(".constants.ts", "")
     if or_code not in component_map:
-        self.output_text.insert(tk.END, f"❌ {file_name}: Không tìm thấy tên component từ Excel\n", "error")
+        self.output_text.insert(
+            tk.END, f"❌ {file_name}: Không tìm thấy tên component từ Excel\n", "error"
+        )
     else:
         or_name = component_map[or_code]
         try:
-            with open(file_path, "r", encoding="utf-8") as f:
+            with open(file_path, encoding="utf-8") as f:
                 content = f.read()
 
             expected = f"""/**
@@ -121,18 +159,33 @@ def check_constants_file(self, file_path, file_name, gui_code, gui_name, author_
  * @author KMD {author_name}
  */"""
 
-            check_file_content(self, file_path, file_name, content, expected, gui_code, gui_name, author_name, or_code, or_name, "静的データ")
+            check_file_content(
+                self,
+                file_path,
+                file_name,
+                content,
+                expected,
+                gui_code,
+                gui_name,
+                author_name,
+                or_code,
+                or_name,
+                "静的データ",
+            )
         except Exception as e:
             self.output_text.insert(tk.END, f"❌ {file_name}: Lỗi đọc file - {str(e)}\n", "error")
+
 
 def check_logic_file(self, file_path, file_name, gui_code, gui_name, author_name, component_map):
     or_code = file_name.replace(".logic.ts", "")
     if or_code not in component_map:
-        self.output_text.insert(tk.END, f"❌ {file_name}: Không tìm thấy tên component từ Excel\n", "error")
+        self.output_text.insert(
+            tk.END, f"❌ {file_name}: Không tìm thấy tên component từ Excel\n", "error"
+        )
     else:
         or_name = component_map[or_code]
         try:
-            with open(file_path, "r", encoding="utf-8") as f:
+            with open(file_path, encoding="utf-8") as f:
                 content = f.read()
 
             expected = f"""/**
@@ -145,18 +198,33 @@ def check_logic_file(self, file_path, file_name, gui_code, gui_name, author_name
  * @author KMD {author_name}
  */"""
 
-            check_file_content(self, file_path, file_name, content, expected, gui_code, gui_name, author_name, or_code, or_name, "処理ロジック")
+            check_file_content(
+                self,
+                file_path,
+                file_name,
+                content,
+                expected,
+                gui_code,
+                gui_name,
+                author_name,
+                or_code,
+                or_name,
+                "処理ロジック",
+            )
         except Exception as e:
             self.output_text.insert(tk.END, f"❌ {file_name}: Lỗi đọc file - {str(e)}\n", "error")
+
 
 def check_type_file(self, file_path, file_name, gui_code, gui_name, author_name, component_map):
     or_code = file_name.replace(".type.d.ts", "")
     if or_code not in component_map:
-        self.output_text.insert(tk.END, f"❌ {file_name}: Không tìm thấy tên component từ Excel\n", "error")
+        self.output_text.insert(
+            tk.END, f"❌ {file_name}: Không tìm thấy tên component từ Excel\n", "error"
+        )
     else:
         or_name = component_map[or_code]
         try:
-            with open(file_path, "r", encoding="utf-8") as f:
+            with open(file_path, encoding="utf-8") as f:
                 content = f.read()
 
             expected = f"""/**
@@ -169,18 +237,33 @@ def check_type_file(self, file_path, file_name, gui_code, gui_name, author_name,
  * @author KMD {author_name}
  */"""
 
-            check_file_content(self, file_path, file_name, content, expected, gui_code, gui_name, author_name, or_code, or_name, "OneWayBind領域用の構造")
+            check_file_content(
+                self,
+                file_path,
+                file_name,
+                content,
+                expected,
+                gui_code,
+                gui_name,
+                author_name,
+                or_code,
+                or_name,
+                "OneWayBind領域用の構造",
+            )
         except Exception as e:
             self.output_text.insert(tk.END, f"❌ {file_name}: Lỗi đọc file - {str(e)}\n", "error")
+
 
 def check_type_2_file(self, file_path, file_name, gui_code, gui_name, author_name, component_map):
     or_code = file_name.replace("Type.d.ts", "")
     if or_code not in component_map:
-        self.output_text.insert(tk.END, f"❌ {file_name}: Không tìm thấy tên component từ Excel\n", "error")
+        self.output_text.insert(
+            tk.END, f"❌ {file_name}: Không tìm thấy tên component từ Excel\n", "error"
+        )
     else:
         or_name = component_map[or_code]
         try:
-            with open(file_path, "r", encoding="utf-8") as f:
+            with open(file_path, encoding="utf-8") as f:
                 content = f.read()
 
             expected = f"""/**
@@ -193,20 +276,45 @@ def check_type_2_file(self, file_path, file_name, gui_code, gui_name, author_nam
  * @author KMD {author_name}
  */"""
 
-            check_file_content(self, file_path, file_name, content, expected, gui_code, gui_name, author_name, or_code, or_name, "双方向バインドのデータ構造")
+            check_file_content(
+                self,
+                file_path,
+                file_name,
+                content,
+                expected,
+                gui_code,
+                gui_name,
+                author_name,
+                or_code,
+                or_name,
+                "双方向バインドのデータ構造",
+            )
         except Exception as e:
             self.output_text.insert(tk.END, f"❌ {file_name}: Lỗi đọc file - {str(e)}\n", "error")
 
-def check_file_content(self, file_path, file_name, content, expected, gui_code, gui_name, author_name, or_code=None, or_name=None, description=None):
+
+def check_file_content(
+    self,
+    file_path,
+    file_name,
+    content,
+    expected,
+    gui_code,
+    gui_name,
+    author_name,
+    or_code=None,
+    or_name=None,
+    description=None,
+):
     if expected not in content:
         self.output_text.insert(tk.END, f"❌ {file_name}:\n", "error")
 
-        self.output_text.insert(tk.END, f"🔍 Mong muốn:\n", "highlight")
+        self.output_text.insert(tk.END, "🔍 Mong muốn:\n", "highlight")
         self.output_text.insert(tk.END, f"{expected}\n")
 
         lines12 = content.splitlines()[:12]
-        self.output_text.insert(tk.END, f"🔍 Code:\n", "highlight")
+        self.output_text.insert(tk.END, "🔍 Code:\n", "highlight")
         self.output_text.insert(tk.END, f"{'\n'.join(lines12)}\n")
-        self.output_text.insert(tk.END, f"\n")
+        self.output_text.insert(tk.END, "\n")
     else:
-        self.output_text.insert(tk.END, f"✅ {file_name}: Đúng định dạng\n", "success") 
+        self.output_text.insert(tk.END, f"✅ {file_name}: Đúng định dạng\n", "success")

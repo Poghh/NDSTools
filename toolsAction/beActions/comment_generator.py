@@ -19,11 +19,7 @@ def generate_comment(tab_instance):
     formatted_date = selected_date.strftime("%Y/%m/%d")
 
     comment_in_head_class = (
-        f"/**\n"
-        f" * @since {formatted_date}\n"
-        f" * @author {author}\n"
-        f" * @implNote {screen_code}\n"
-        f" */"
+        f"/**\n * @since {formatted_date}\n * @author {author}\n * @implNote {screen_code}\n */"
     )
 
     comment_in_dto_class = (

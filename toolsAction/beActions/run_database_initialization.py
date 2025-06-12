@@ -1,9 +1,9 @@
-import subprocess
 import os
 import re
+import subprocess
 from tkinter import messagebox
-from toolsAction.beActions.db_config import DB_CONFIG
 
+from toolsAction.beActions.db_config import DB_CONFIG
 
 # --- Đường dẫn thư mục ---
 WORKSPACE_PATH = "/workspace"
@@ -20,9 +20,7 @@ INIT_COMMANDS = [
 
 def run_database_initialization(self):
     """Hàm chính để gọi từ GUI - self là class BackEndTab"""
-    confirm = messagebox.askyesno(
-        "Xác nhận", "Bạn có chắc muốn khởi tạo lại cơ sở dữ liệu?"
-    )
+    confirm = messagebox.askyesno("Xác nhận", "Bạn có chắc muốn khởi tạo lại cơ sở dữ liệu?")
     if not confirm:
         return
 
@@ -53,8 +51,7 @@ def run_shell_scripts(output_callback=print):
             cmd,
             shell=True,
             check=True,
-            stdout=subprocess.PIPE,
-            stderr=subprocess.PIPE,
+            capture_output=True,
             text=True,
         )
         output_callback(f"✔ Thành công:\n{result.stdout}")
@@ -81,12 +78,10 @@ def run_sql_dump_with_cli(dump_file_path, output_callback=print):
         f"-P {DB_CONFIG['port']} "
         f"-u {DB_CONFIG['user']} "
         f"-p{DB_CONFIG['password']} "
-        f"{DB_CONFIG['database']} < \"{dump_file_path}\""
+        f'{DB_CONFIG["database"]} < "{dump_file_path}"'
     )
     output_callback(f"▶ Đang chạy dump file bằng mysql CLI: {dump_file_path}")
-    result = subprocess.run(
-        mysql_cmd, shell=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True
-    )
+    result = subprocess.run(mysql_cmd, shell=True, capture_output=True, text=True)
 
     if result.returncode != 0:
         raise RuntimeError(f"❌ Lỗi khi chạy dump file:\n{result.stderr}")
@@ -96,9 +91,7 @@ def run_sql_dump_with_cli(dump_file_path, output_callback=print):
 
 def run_additional_sql_commands(output_callback=print):
     """Chạy các lệnh SQL bổ sung theo yêu cầu."""
-    output_callback(
-        "▶ Đang xử lý bước chạy lệnh SQL bổ sung trong thư mục /workspace/db ..."
-    )
+    output_callback("▶ Đang xử lý bước chạy lệnh SQL bổ sung trong thư mục /workspace/db ...")
 
     if not os.path.isdir(DB_FOLDER_PATH):
         raise FileNotFoundError("❌ Không tìm thấy thư mục /workspace/db")
@@ -119,7 +112,7 @@ def run_additional_sql_commands(output_callback=print):
 
     ddl_cmd = (
         f"mysql -h {DB_CONFIG['host']} -P {DB_CONFIG['port']} -u root -ppass! "
-        f"-D {DB_CONFIG['database']} < \"{ddl_path}\""
+        f'-D {DB_CONFIG["database"]} < "{ddl_path}"'
     )
     subprocess.run(ddl_cmd, shell=True, check=True)
     output_callback("✔ Đã import ddl_all.sql")
@@ -131,7 +124,7 @@ def run_additional_sql_commands(output_callback=print):
 
     dml_cmd = (
         f"mysql -h {DB_CONFIG['host']} -P {DB_CONFIG['port']} -u devuser -pdevuser "
-        f"-D {DB_CONFIG['database']} < \"{dml_path}\""
+        f'-D {DB_CONFIG["database"]} < "{dml_path}"'
     )
     subprocess.run(dml_cmd, shell=True, check=True)
     output_callback("✔ Đã import dml_all.sql")

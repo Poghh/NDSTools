@@ -1,17 +1,18 @@
 import tkinter as tk
-from tkinter import scrolledtext, messagebox
+from tkinter import messagebox, scrolledtext
+
 from tkcalendar import DateEntry
-from toolsUI.beTab.unit_test_generater_dialog import UnitTestDialog
-from tkinter import scrolledtext
-from toolsAction.beActions.select_file import select_file
+
 from toolsAction.beActions.comment_generator import generate_comment
+from toolsAction.beActions.count_code import count_code
 from toolsAction.beActions.create_java_dto_class import generated_dto
 from toolsAction.beActions.process_selfcheck_excel import select_self_check_file
-from toolsAction.beActions.count_code import count_code
 from toolsAction.beActions.run_database_initialization import (
     run_database_initialization,
 )
 from toolsAction.beActions.run_sql_folder import run_sql_from_folder
+from toolsAction.beActions.select_file import select_file
+from toolsUI.beTab.unit_test_generater_dialog import UnitTestDialog
 
 
 class BackEndTab:
@@ -73,9 +74,7 @@ class BackEndTab:
         x_scrollbar = tk.Scrollbar(listbox_frame, orient=tk.HORIZONTAL)
         x_scrollbar.pack(side=tk.BOTTOM, fill=tk.X)
 
-        self.file_listbox = tk.Listbox(
-            listbox_frame, height=6, xscrollcommand=x_scrollbar.set
-        )
+        self.file_listbox = tk.Listbox(listbox_frame, height=6, xscrollcommand=x_scrollbar.set)
         self.file_listbox.pack(side=tk.LEFT, fill=tk.BOTH, expand=True)
         x_scrollbar.config(command=self.file_listbox.xview)
 
@@ -125,15 +124,11 @@ class BackEndTab:
         ).pack(pady=(0, 5), anchor="center")
 
         # === [3] FILE CHỌN & DTO === (di chuyển xuống cuối)
-        file_frame = tk.LabelFrame(
-            frame_input, text="Chọn File & Tạo DTO", bg="lightgray"
-        )
+        file_frame = tk.LabelFrame(frame_input, text="Chọn File & Tạo DTO", bg="lightgray")
         file_frame.grid(row=2, column=0, sticky="ew", pady=(0, 10))
 
         self.file_path = None
-        self.file_path_label = tk.Label(
-            file_frame, text="Chưa chọn file", bg="lightgray"
-        )
+        self.file_path_label = tk.Label(file_frame, text="Chưa chọn file", bg="lightgray")
         self.file_path_label.pack(pady=5, anchor="center")
 
         tk.Button(
@@ -151,9 +146,7 @@ class BackEndTab:
         ).pack(pady=2, anchor="center")
 
         # === [4] NÚT KHỞI TẠO DB ===
-        init_db_frame = tk.LabelFrame(
-            frame_input, text="Khởi tạo Cơ sở dữ liệu", bg="lightgray"
-        )
+        init_db_frame = tk.LabelFrame(frame_input, text="Khởi tạo Cơ sở dữ liệu", bg="lightgray")
         init_db_frame.grid(row=3, column=0, sticky="ew", pady=(0, 10))
 
         tk.Button(

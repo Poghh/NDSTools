@@ -16,7 +16,7 @@ def count_code(listbox_widget, output_widget):
         in_block_comment = False
 
         try:
-            with open(file_path, "r", encoding="utf-8") as f:
+            with open(file_path, encoding="utf-8") as f:
                 for line in f:
                     line = line.strip()
                     if not line:
@@ -45,9 +45,7 @@ def count_code(listbox_widget, output_widget):
             total_code_lines += code_lines
             total_comment_lines += comment_lines
 
-            results.append(
-                f"✅ {file_path}\n  Code: {code_lines}, Comment: {comment_lines}\n"
-            )
+            results.append(f"✅ {file_path}\n  Code: {code_lines}, Comment: {comment_lines}\n")
 
         except Exception as e:
             results.append(f"❌ {file_path}\n  Error: {str(e)}\n")

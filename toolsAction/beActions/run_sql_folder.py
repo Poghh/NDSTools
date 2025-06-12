@@ -1,6 +1,8 @@
 import os
-import pymysql
 from tkinter import filedialog
+
+import pymysql
+
 from toolsAction.beActions.db_config import DB_CONFIG
 
 
@@ -18,15 +20,13 @@ def run_sql_from_folder(self):
         sql_files = sorted([f for f in os.listdir(folder) if f.endswith(".sql")])
 
         if not sql_files:
-            self.output_text.insert(
-                "end", "⚠️ Không tìm thấy file .sql nào trong thư mục.\n"
-            )
+            self.output_text.insert("end", "⚠️ Không tìm thấy file .sql nào trong thư mục.\n")
             return
 
         for filename in sql_files:
             path = os.path.join(folder, filename)
             try:
-                with open(path, "r", encoding="utf-8") as f:
+                with open(path, encoding="utf-8") as f:
                     sql_content = f.read()
 
                 with conn.cursor() as cur:

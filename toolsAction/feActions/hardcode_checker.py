@@ -1,6 +1,7 @@
-import tkinter as tk
 import os
 import re
+import tkinter as tk
+
 
 def check_hardcode_jp(self):
     self.set_running_state(True)
@@ -21,7 +22,7 @@ def check_hardcode_jp(self):
             self.output_text.insert(tk.END, f"❌ Không tìm thấy file: {file_path}\n", "error")
             continue
 
-        with open(file_path, "r", encoding="utf-8") as f:
+        with open(file_path, encoding="utf-8") as f:
             lines = f.readlines()
 
         for idx, line in enumerate(lines):
@@ -31,11 +32,20 @@ def check_hardcode_jp(self):
                 if re.match(r"^\s*(//|/\*|\*|<!--)", stripped_line):
                     continue
                 matched_jp = jp_pattern.findall(code_part)
-                hardcoded_str = ' '.join(matched_jp)
-                results.append((file_path, idx + 1, hardcoded_str, lines[max(0, idx-2):min(len(lines), idx+3)]))
+                hardcoded_str = " ".join(matched_jp)
+                results.append(
+                    (
+                        file_path,
+                        idx + 1,
+                        hardcoded_str,
+                        lines[max(0, idx - 2) : min(len(lines), idx + 3)],
+                    )
+                )
 
     if not results:
-        self.output_text.insert(tk.END, "✅ Không phát hiện hardcode tiếng Nhật ngoài comment.\n", "success")
+        self.output_text.insert(
+            tk.END, "✅ Không phát hiện hardcode tiếng Nhật ngoài comment.\n", "success"
+        )
     else:
         grouped = {}
         for path, lineno, jp_text, snippet in results:
@@ -45,8 +55,10 @@ def check_hardcode_jp(self):
         for base, items in grouped.items():
             self.output_text.insert(tk.END, f"file {base}:\n", "error")
             for lineno, jp_text, snippet in items:
-                self.output_text.insert(tk.END, f"dòng {lineno} chứa chuỗi tiếng Nhật hardcode: {jp_text}\n", "error")
-                self.output_text.insert(tk.END, ''.join(snippet) + "\n")
+                self.output_text.insert(
+                    tk.END, f"dòng {lineno} chứa chuỗi tiếng Nhật hardcode: {jp_text}\n", "error"
+                )
+                self.output_text.insert(tk.END, "".join(snippet) + "\n")
 
     self.output_text.insert(tk.END, "\n✅ Kiểm tra hardcode JP hoàn tất.\n")
-    self.set_running_state(False) 
+    self.set_running_state(False)

@@ -1,0 +1,12 @@
+# .ruff.toml
+
+line-length = 100
+
+[lint]
+select = ["E", "F", "I", "UP", "N", "B"]
+ignore = ["E501"]  # bỏ cảnh báo dòng dài nếu muốn
+
+[format]
+quote-style = "double"
+indent-style = "space"
+line-ending = "lf"

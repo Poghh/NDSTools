@@ -1,6 +1,7 @@
 import os
-import pandas as pd
 import tkinter as tk
+
+import pandas as pd
 
 
 def select_self_check_file(self):
@@ -54,14 +55,13 @@ def process_selfcheck_excel(
 
     result = []
     name = ""
-    for index, row in workbook.iterrows():
+    for _index, row in workbook.iterrows():
         if (
             pd.notna(row[4])
             and "KMD" in str(row[4])
             and name == ""
             and isinstance(author_entry, tk.Entry)
         ):
-
             name = str(row[4]).strip()
             author_entry.delete(0, tk.END)
             author_entry.insert(0, name)

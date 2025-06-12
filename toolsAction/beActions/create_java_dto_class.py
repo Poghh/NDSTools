@@ -1,6 +1,7 @@
 import tkinter as tk
-from openpyxl.utils import column_index_from_string, get_column_letter
+
 from openpyxl import load_workbook
+from openpyxl.utils import column_index_from_string, get_column_letter
 
 
 def generated_dto(tab_instance):
@@ -8,18 +9,14 @@ def generated_dto(tab_instance):
         print("Bạn chưa chọn file Excel!")
         return
     tab_instance.output_text.delete(1.0, tk.END)
-    request_sheet, response_sheet = find_request_and_response_sheets(
-        tab_instance.file_path
-    )
+    request_sheet, response_sheet = find_request_and_response_sheets(tab_instance.file_path)
 
     for sheet in [request_sheet, response_sheet]:
         if sheet is None:
             continue
 
         header_ranges, header_row = find_header_ranges_in_sheet(sheet)
-        data_by_header, hierarchy = extract_column_data_by_headers(
-            sheet, header_ranges, header_row
-        )
+        data_by_header, hierarchy = extract_column_data_by_headers(sheet, header_ranges, header_row)
 
         headers = {
             "フィールド名": data_by_header["フィールド名"],
@@ -30,9 +27,7 @@ def generated_dto(tab_instance):
 
         java_code = convert_to_java_class(sheet.title, headers, hierarchy)
 
-        tab_instance.output_text.insert(
-            tk.END, f"\n=== Java class cho {sheet.title} ===\n\n"
-        )
+        tab_instance.output_text.insert(tk.END, f"\n=== Java class cho {sheet.title} ===\n\n")
         tab_instance.output_text.insert(tk.END, java_code)
         tab_instance.output_text.insert(tk.END, "\n\n" + "=" * 80 + "\n")
 
@@ -43,19 +38,11 @@ def find_request_and_response_sheets(file_path):
         sheet_names = workbook.sheetnames
 
         request_sheet = next(
-            (
-                workbook[name]
-                for name in sheet_names
-                if "リクエストパラメータ詳細" in name
-            ),
+            (workbook[name] for name in sheet_names if "リクエストパラメータ詳細" in name),
             None,
         )
         response_sheet = next(
-            (
-                workbook[name]
-                for name in sheet_names
-                if "レスポンスパラメータ詳細" in name
-            ),
+            (workbook[name] for name in sheet_names if "レスポンスパラメータ詳細" in name),
             None,
         )
 
@@ -71,18 +58,13 @@ def find_request_and_response_sheets(file_path):
         return None, None
 
 
-from openpyxl.utils import get_column_letter
-
-
 def find_header_ranges_in_sheet(sheet):
     target_headers = ["フィールド名", "データ構造", "必須", "データタイプ"]
     header_ranges = {}
     header_row = None
 
     for row in sheet.iter_rows(min_row=1, max_row=10):
-        headers_in_row = [
-            str(cell.value).strip() if cell.value else None for cell in row
-        ]
+        headers_in_row = [str(cell.value).strip() if cell.value else None for cell in row]
         if any(h in headers_in_row for h in target_headers):
             header_row = row[0].row
             current_header = None
@@ -95,9 +77,7 @@ def find_header_ranges_in_sheet(sheet):
                         start_col = get_column_letter(start_idx + 1)
                         end_col = get_column_letter(end_idx + 1)
                         header_ranges[current_header] = (
-                            f"{start_col}-{end_col}"
-                            if start_col != end_col
-                            else start_col
+                            f"{start_col}-{end_col}" if start_col != end_col else start_col
                         )
                     current_header = value
                     start_idx = idx
@@ -109,9 +89,7 @@ def find_header_ranges_in_sheet(sheet):
                         start_col = get_column_letter(start_idx + 1)
                         end_col = get_column_letter(end_idx + 1)
                         header_ranges[current_header] = (
-                            f"{start_col}-{end_col}"
-                            if start_col != end_col
-                            else start_col
+                            f"{start_col}-{end_col}" if start_col != end_col else start_col
                         )
                         current_header = None
                         start_idx = None
@@ -141,9 +119,7 @@ def extract_column_data_by_headers(sheet, header_ranges, header_row):
             if start_col == end_col:
                 values.append(row[start_col - 1].value)
             else:
-                merged_values = [
-                    row[col - 1].value for col in range(start_col, end_col + 1)
-                ]
+                merged_values = [row[col - 1].value for col in range(start_col, end_col + 1)]
                 values.append(merged_values)
 
         data_by_header[header] = values
@@ -209,9 +185,7 @@ def convert_to_java_class(sheet_name: str, headers: dict, hierarchy: dict) -> st
         skip_field_names.update(camel_case(child) for child in children)
 
     # === Flat fields ===
-    for idx, (name, field) in enumerate(
-        zip(headers["フィールド名"], headers["データ構造"])
-    ):
+    for idx, (name, field) in enumerate(zip(headers["フィールド名"], headers["データ構造"])):
         field_var = field[0]
         if field_var in skip_field_names or field_var in [None, "None"]:
             continue
@@ -249,9 +223,7 @@ def convert_to_java_class(sheet_name: str, headers: dict, hierarchy: dict) -> st
         parent_required = next(
             (
                 required
-                for field, required in zip(
-                    headers["データ構造"], headers.get("必須", [])
-                )
+                for field, required in zip(headers["データ構造"], headers.get("必須", []))
                 if isinstance(field, list) and field[0] == parent
             ),
             "-",
@@ -260,9 +232,7 @@ def convert_to_java_class(sheet_name: str, headers: dict, hierarchy: dict) -> st
         parent_datatype_raw = next(
             (
                 dtype
-                for field, dtype in zip(
-                    headers["データ構造"], headers.get("データタイプ", [])
-                )
+                for field, dtype in zip(headers["データ構造"], headers.get("データタイプ", []))
                 if isinstance(field, list) and field[0] == parent
             ),
             None,
@@ -294,10 +264,7 @@ def convert_to_java_class(sheet_name: str, headers: dict, hierarchy: dict) -> st
                 if field_candidate == child:
                     comment = name
                     field_name = camel_case(field_candidate)
-                    if (
-                        idx < len(required_flags)
-                        and str(required_flags[idx]).strip() != "-"
-                    ):
+                    if idx < len(required_flags) and str(required_flags[idx]).strip() != "-":
                         child_required = True
                     break
 

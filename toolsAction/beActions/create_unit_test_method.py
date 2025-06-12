@@ -5,14 +5,10 @@ def create_unit_test_method(
     screen_code: str, service_name: str, endpoint: str, json_raw: str
 ) -> str:
     # Tên method test
-    method_name = (
-        "test" + screen_code + "".join(x.capitalize() for x in service_name.split("_"))
-    )
+    method_name = "test" + screen_code + "".join(x.capitalize() for x in service_name.split("_"))
 
     # Tên log message
-    log_label = (
-        f"{screen_code} {''.join(x.capitalize() for x in service_name.split('_'))}"
-    )
+    log_label = f"{screen_code} {''.join(x.capitalize() for x in service_name.split('_'))}"
 
     # Endpoint URL
     endpoint_url = f"/cmn/{endpoint}"

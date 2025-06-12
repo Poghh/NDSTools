@@ -1,12 +1,14 @@
-import sys
 import subprocess
+import sys
 import time
-from tkinterdnd2 import TkinterDnD
 from tkinter import ttk
+
+from tkinterdnd2 import TkinterDnD
+from watchdog.events import FileSystemEventHandler
+from watchdog.observers import Observer
+
 from toolsUI.beTab.ui_be import BackEndTab
 from toolsUI.ui_fe import FrontEndTab
-from watchdog.observers import Observer
-from watchdog.events import FileSystemEventHandler
 
 if "--watch" in sys.argv:
 
