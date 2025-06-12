@@ -1,21 +1,22 @@
 import os
 import re
 import subprocess
+import sys
 from tkinter import messagebox
+
+import pymysql
 
 from toolsAction.beActions.db_config import DB_CONFIG
 
-# --- Đường dẫn thư mục ---
-WORKSPACE_PATH = "/workspace"
-SQL_SCRIPT_PATH = os.path.join(WORKSPACE_PATH, "setup/sql_script")
-DB_FOLDER_PATH = os.path.join(WORKSPACE_PATH, "db")
+# --- Định nghĩa đường dẫn thực tế ---
+if getattr(sys, "frozen", False):
+    # Khi chạy từ file .exe
+    BASE_DIR = os.path.dirname(sys.executable)
+else:
+    # Khi chạy từ mã nguồn Python
+    BASE_DIR = os.path.abspath(os.path.dirname(__file__))
 
-# --- Danh sách lệnh shell khởi tạo ---
-INIT_COMMANDS = [
-    "sh setup/sql_script/db_initialization.sh",
-    "sh setup/sql_script/db_initialization_cphn.sh",
-    "sh setup/sql_script/db_initialization_cnf.sh",
-]
+DB_FOLDER_PATH = os.path.join(BASE_DIR, "db")
 
 
 def run_database_initialization(self):
@@ -27,7 +28,6 @@ def run_database_initialization(self):
     _log(self, "🚀 Bắt đầu khởi tạo cơ sở dữ liệu...\n")
 
     try:
-        run_shell_scripts(lambda msg: _log(self, msg))
         latest_sql_file = find_latest_dump_file()
         run_sql_dump_with_cli(latest_sql_file, lambda msg: _log(self, msg))
         run_additional_sql_commands(lambda msg: _log(self, msg))
@@ -42,25 +42,9 @@ def _log(self, msg):
     self.tab.update()
 
 
-def run_shell_scripts(output_callback=print):
-    """Chạy các script shell khởi tạo DB."""
-    os.chdir(WORKSPACE_PATH)
-    for cmd in INIT_COMMANDS:
-        output_callback(f"▶ Đang chạy: {cmd}")
-        result = subprocess.run(
-            cmd,
-            shell=True,
-            check=True,
-            capture_output=True,
-            text=True,
-        )
-        output_callback(f"✔ Thành công:\n{result.stdout}")
-
-
 def find_latest_dump_file():
-    """Tìm file Dump*.sql mới nhất trong cùng thư mục với script này."""
-    current_dir = os.path.dirname(os.path.abspath(__file__))
-    dump_files = [f for f in os.listdir(current_dir) if re.match(r"Dump\d+\.sql$", f)]
+    """Tìm file Dump*.sql mới nhất trong cùng thư mục chạy (BASE_DIR)."""
+    dump_files = [f for f in os.listdir(BASE_DIR) if re.match(r"Dump\d+\.sql$", f)]
 
     if not dump_files:
         raise FileNotFoundError(
@@ -68,33 +52,36 @@ def find_latest_dump_file():
         )
 
     latest_file = sorted(dump_files)[-1]
-    return os.path.join(current_dir, latest_file)
+    return os.path.join(BASE_DIR, latest_file)
 
 
 def run_sql_dump_with_cli(dump_file_path, output_callback=print):
-    """Chạy file dump bằng mysql CLI."""
-    mysql_cmd = (
-        f"mysql -h {DB_CONFIG['host']} "
-        f"-P {DB_CONFIG['port']} "
-        f"-u {DB_CONFIG['user']} "
-        f"-p{DB_CONFIG['password']} "
-        f'{DB_CONFIG["database"]} < "{dump_file_path}"'
-    )
-    output_callback(f"▶ Đang chạy dump file bằng mysql CLI: {dump_file_path}")
-    result = subprocess.run(mysql_cmd, shell=True, capture_output=True, text=True)
+    """Chạy file dump bằng pymysql thay vì mysql CLI."""
+    output_callback(f"▶ Đang chạy dump file bằng pymysql: {dump_file_path}")
 
-    if result.returncode != 0:
-        raise RuntimeError(f"❌ Lỗi khi chạy dump file:\n{result.stderr}")
+    try:
+        conn = pymysql.connect(**DB_CONFIG)
+        with open(dump_file_path, encoding="utf-8") as f:
+            sql_content = f.read()
 
-    output_callback("✅ Dump file chạy thành công.")
+        with conn.cursor() as cur:
+            for statement in sql_content.split(";"):
+                if statement.strip():
+                    cur.execute(statement)
+
+        conn.commit()
+        conn.close()
+        output_callback("✅ Dump file chạy thành công.")
+    except Exception as e:
+        raise RuntimeError(f"❌ Lỗi khi chạy dump file bằng pymysql:\n{e}") from e
 
 
 def run_additional_sql_commands(output_callback=print):
     """Chạy các lệnh SQL bổ sung theo yêu cầu."""
-    output_callback("▶ Đang xử lý bước chạy lệnh SQL bổ sung trong thư mục /workspace/db ...")
+    output_callback("▶ Đang xử lý bước chạy lệnh SQL bổ sung trong thư mục /db ...")
 
     if not os.path.isdir(DB_FOLDER_PATH):
-        raise FileNotFoundError("❌ Không tìm thấy thư mục /workspace/db")
+        raise FileNotFoundError(f"❌ Không tìm thấy thư mục db tại: {DB_FOLDER_PATH}")
 
     # 1. SET GLOBAL sql_mode
     sql_mode_cmd = (
@@ -123,7 +110,7 @@ def run_additional_sql_commands(output_callback=print):
         raise FileNotFoundError("❌ Không tìm thấy dml_all.sql")
 
     dml_cmd = (
-        f"mysql -h {DB_CONFIG['host']} -P {DB_CONFIG['port']} -u devuser -pdevuser "
+        f"mysql -h {DB_CONFIG['host']} -P {DB_CONFIG['port']} -u devuser -p devuser "
         f'-D {DB_CONFIG["database"]} < "{dml_path}"'
     )
     subprocess.run(dml_cmd, shell=True, check=True)
