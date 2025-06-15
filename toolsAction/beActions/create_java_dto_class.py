@@ -168,7 +168,12 @@ def convert_to_java_class(sheet_name: str, headers: dict, hierarchy: dict) -> st
         return f"/** {name} */"
 
     def camel_case(s: str):
-        return s[0].lower() + s[1:] if s else s
+        import re
+
+        if not s:
+            return s
+        parts = re.split(r"[_\s]+", s)
+        return parts[0].lower() + "".join(p.capitalize() for p in parts[1:])
 
     def pascal_case(s: str):
         return s[0].upper() + s[1:] if s else s
@@ -252,7 +257,9 @@ def convert_to_java_class(sheet_name: str, headers: dict, hierarchy: dict) -> st
         result.append(f"    private {java_type} {parent_var};\n")
 
         result.append("    @Getter\n    @Setter")
-        result.append(f"    public static class {parent_class} " + "{")
+        result.append(f"    public static class {parent_class} extends IDtoImpl " + "{")
+        result.append("        /** serialVersionUID. */")
+        result.append("        private static final long serialVersionUID = 1L;\n")
         for child in children:
             comment = ""
             field_name = camel_case(child)
