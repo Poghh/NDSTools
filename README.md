@@ -54,3 +54,9 @@ Chạy ứng dụng với hot reload
 ```bash
 python autoReviewTool.py --watch
 ```
+
+### 5. Command đóng gói ứng dụng
+
+```bash
+pyinstaller autoReviewTool.py --name NDSTools-v1.0.3 --onefile -w
+```

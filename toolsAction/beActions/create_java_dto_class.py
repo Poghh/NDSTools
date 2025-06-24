@@ -1,3 +1,4 @@
+import re
 import tkinter as tk
 
 from openpyxl import load_workbook
@@ -168,8 +169,6 @@ def convert_to_java_class(sheet_name: str, headers: dict, hierarchy: dict) -> st
         return f"/** {name} */"
 
     def camel_case(s: str):
-        import re
-
         if not s:
             return s
         parts = re.split(r"[_\s]+", s)
@@ -185,14 +184,22 @@ def convert_to_java_class(sheet_name: str, headers: dict, hierarchy: dict) -> st
 
     required_flags = headers.get("必須", [])
     data_types = headers.get("データタイプ", [])
-    skip_field_names = {camel_case(parent) for parent in hierarchy}
+    skip_field_names = set(hierarchy.keys())
+
     for children in hierarchy.values():
-        skip_field_names.update(camel_case(child) for child in children)
+        skip_field_names.update(children)
 
     # === Flat fields ===
     for idx, (name, field) in enumerate(zip(headers["フィールド名"], headers["データ構造"])):
         field_var = field[0]
+
+        # bỏ qua nếu đã được xử lý trong hierarchy
         if field_var in skip_field_names or field_var in [None, "None"]:
+            continue
+
+        # bỏ qua nếu datatype là List (nó sẽ được xử lý ở phần nested class)
+        dtype = data_types[idx] if idx < len(data_types) else None
+        if dtype == "List":
             continue
 
         required = idx < len(required_flags) and str(required_flags[idx]).strip() != "-"
@@ -270,7 +277,7 @@ def convert_to_java_class(sheet_name: str, headers: dict, hierarchy: dict) -> st
                 field_candidate = field[0] if isinstance(field, list) else field
                 if field_candidate == child:
                     comment = name
-                    field_name = camel_case(field_candidate)
+                    field_name = field_candidate
                     if idx < len(required_flags) and str(required_flags[idx]).strip() != "-":
                         child_required = True
                     break
