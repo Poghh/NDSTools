@@ -5,7 +5,7 @@ from tkinter import filedialog, scrolledtext, ttk
 
 import pandas as pd
 from PIL import Image, ImageTk
-from tkinterdnd2 import DND_FILES
+from tkinterdnd2 import DND_FILES, TkinterDnD
 
 from toolsAction.feActions.console_checker import check_console_log
 from toolsAction.feActions.css_checker import check_css_color_main
@@ -24,6 +24,8 @@ class FrontEndTab:
         self.icons = {}
         self.eslint_running = False
         self.eslint_thread = None
+        # Store icon references to prevent garbage collection
+        self.icon_references = []
         self.init_ui()
 
     def load_icon(self, name, size=(24, 24)):
@@ -76,21 +78,37 @@ class FrontEndTab:
         self.selfcheck_frame.pack(fill="x", pady=(0, 8))
 
         upload_icon = self.load_icon("upload.png")
-        self.upload_selfcheck_btn = tk.Button(
-            self.selfcheck_frame,
-            text="📂 Tải file Self-check",
-            image=upload_icon,
-            compound=tk.LEFT,
-            command=self.upload_selfcheck,
-            bg="#fff",
-            fg="#222",
-            font=("Segoe UI", 10, "bold"),
-            relief=tk.RIDGE,
-            bd=1,
-            activebackground="#e3eafc",
-            activeforeground="#0d47a1",
-        )
-        self.upload_selfcheck_btn.image = upload_icon
+        # Create button with or without icon
+        if upload_icon:
+            self.upload_selfcheck_btn = tk.Button(
+                self.selfcheck_frame,
+                text="📂 Tải file Self-check",
+                image=upload_icon,
+                compound=tk.LEFT,
+                command=self.upload_selfcheck,
+                bg="#fff",
+                fg="#222",
+                font=("Segoe UI", 10, "bold"),
+                relief=tk.RIDGE,
+                bd=1,
+                activebackground="#e3eafc",
+                activeforeground="#0d47a1",
+            )
+            # Keep reference to prevent garbage collection
+            self.icon_references.append(upload_icon)
+        else:
+            self.upload_selfcheck_btn = tk.Button(
+                self.selfcheck_frame,
+                text="📂 Tải file Self-check",
+                command=self.upload_selfcheck,
+                bg="#fff",
+                fg="#222",
+                font=("Segoe UI", 10, "bold"),
+                relief=tk.RIDGE,
+                bd=1,
+                activebackground="#e3eafc",
+                activeforeground="#0d47a1",
+            )
         self.upload_selfcheck_btn.pack(side=tk.LEFT)
 
         self.selfcheck_label = tk.Label(
@@ -113,8 +131,17 @@ class FrontEndTab:
         )
         self.path_input.pack(fill="both", expand=True)
 
-        self.path_input.drop_target_register(DND_FILES)
-        self.path_input.dnd_bind("<<Drop>>", self.handle_drop)
+        # Enable drag and drop functionality
+        try:
+            # Use getattr to safely check for drag-and-drop methods
+            drop_register = getattr(self.path_input, 'drop_target_register', None)
+            dnd_bind = getattr(self.path_input, 'dnd_bind', None)
+            if drop_register and dnd_bind:
+                drop_register(DND_FILES)
+                dnd_bind("<<Drop>>", self.handle_drop)
+        except (AttributeError, Exception):
+            # If drag and drop is not available, continue without it
+            pass
 
         self.frame_future = ttk.LabelFrame(
             self.top_frame,
@@ -125,21 +152,37 @@ class FrontEndTab:
         self.frame_future.pack(side=tk.LEFT, fill="both", expand=True, padx=(8, 0))
 
         upload_excel_icon = self.load_icon("excel.png")
-        self.upload_excel_btn = tk.Button(
-            self.frame_future,
-            text="📂 Tải file tài liệu",
-            image=upload_excel_icon,
-            compound=tk.LEFT,
-            command=self.upload_excel_docs,
-            bg="#fff",
-            fg="#222",
-            font=("Segoe UI", 10, "bold"),
-            relief=tk.RIDGE,
-            bd=1,
-            activebackground="#e3eafc",
-            activeforeground="#0d47a1",
-        )
-        self.upload_excel_btn.image = upload_excel_icon
+        # Create button with or without icon
+        if upload_excel_icon:
+            self.upload_excel_btn = tk.Button(
+                self.frame_future,
+                text="📂 Tải file tài liệu",
+                image=upload_excel_icon,
+                compound=tk.LEFT,
+                command=self.upload_excel_docs,
+                bg="#fff",
+                fg="#222",
+                font=("Segoe UI", 10, "bold"),
+                relief=tk.RIDGE,
+                bd=1,
+                activebackground="#e3eafc",
+                activeforeground="#0d47a1",
+            )
+            # Keep reference to prevent garbage collection
+            self.icon_references.append(upload_excel_icon)
+        else:
+            self.upload_excel_btn = tk.Button(
+                self.frame_future,
+                text="📂 Tải file tài liệu",
+                command=self.upload_excel_docs,
+                bg="#fff",
+                fg="#222",
+                font=("Segoe UI", 10, "bold"),
+                relief=tk.RIDGE,
+                bd=1,
+                activebackground="#e3eafc",
+                activeforeground="#0d47a1",
+            )
         self.upload_excel_btn.pack(anchor="nw")
 
         self.excel_label = tk.Label(
@@ -162,8 +205,17 @@ class FrontEndTab:
         )
         self.excel_output.pack(fill="both", expand=True)
 
-        self.excel_output.drop_target_register(DND_FILES)
-        self.excel_output.dnd_bind("<<Drop>>", self.handle_docs_drop)
+        # Enable drag and drop functionality
+        try:
+            # Use getattr to safely check for drag-and-drop methods
+            drop_register = getattr(self.excel_output, 'drop_target_register', None)
+            dnd_bind = getattr(self.excel_output, 'dnd_bind', None)
+            if drop_register and dnd_bind:
+                drop_register(DND_FILES)
+                dnd_bind("<<Drop>>", self.handle_docs_drop)
+        except (AttributeError, Exception):
+            # If drag and drop is not available, continue without it
+            pass
 
         self.author_subframe = tk.Frame(self.frame_future, bg="#e3eafc")
         self.author_subframe.pack(fill="x", pady=(10, 0))
@@ -308,13 +360,14 @@ class FrontEndTab:
         result = []
         name = ""
         for _index, row in workbook.iterrows():
-            if pd.notna(row[4]) and "KMD" in str(row[4]) and not name:
-                full_name = str(row[4]).strip()
+            # Fix pandas Series boolean evaluation
+            if pd.notna(row.iloc[4]) and "KMD" in str(row.iloc[4]) and not name:
+                full_name = str(row.iloc[4]).strip()
                 if "KMD" in full_name:
                     name = full_name.split("KMD", 1)[-1].strip()
                     self.author_var.set(name)
-            if row[3] == "新規":
-                result.append(row[2])
+            if row.iloc[3] == "新規":
+                result.append(row.iloc[2])
 
         for item in result:
             self.path_input.insert(tk.END, f"{item}\n")
@@ -363,8 +416,9 @@ class FrontEndTab:
 
         for _, row in workbook.iterrows():
             if mark_gui is not None and len(row) > mark_gui + 1:
-                code = row[mark_gui + 1]
-                name = row[mark_gui + 1 + 1] if len(row) > mark_gui + 1 + 1 else ""
+                code = row.iloc[mark_gui + 1]
+                name = row.iloc[mark_gui + 1 + 1] if len(row) > mark_gui + 1 + 1 else ""
+                # Fix pandas Series boolean evaluation
                 if pd.notna(code) and isinstance(code, str) and "Or" in code:
                     result.append({"code": code.strip(), "name": str(name).strip()})
 
@@ -543,7 +597,11 @@ class FrontEndTab:
                 if any(keyword in line.lower() for keyword in ["error", "✖", "❌"])
                 else None
             )
-            self.output_text.insert(tk.END, line + "\n", tag)
+            # Fix text widget tag insertion - only pass tag if it's not None
+            if tag:
+                self.output_text.insert(tk.END, line + "\n", tag)
+            else:
+                self.output_text.insert(tk.END, line + "\n")
 
     def clear_all(self):
         self.path_input.delete("1.0", tk.END)
