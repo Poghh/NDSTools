@@ -380,7 +380,10 @@ class UnitTestTab:
 📊 Dữ liệu kết hợp: {result['combined_data_copied']} items
 📝 Cột đã điền: {', '.join(result['additional_condition_columns_filled'])}
 🔲 Cột border: {', '.join(result['border_only_columns_processed'])}
-📝 Không merge: Tất cả dữ liệu giữ nguyên như file mocks
+🔄 Gộp hàng: {result['groups_processed']} nhóm đã gộp, {result['rows_deleted']} hàng đã xóa
+🔗 Merge ActionNo: {result['action_merges']} nhóm đã merge
+🔗 Merge 項目: {result['koumoku_merges']} nhóm đã merge
+🔗 Merge 操作: {result['sousa_merges']} nhóm đã merge
 ✅ Trạng thái: {result['status']}
                 """
             else:

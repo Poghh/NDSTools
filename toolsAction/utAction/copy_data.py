@@ -417,26 +417,20 @@ def copy_action_data(test_file_path, doc_file_path, progress_callback=None):
         header_row = None
         header_col = None
         
-        print(f"Searching for 'アクションNo.' in sheet '{sheet_name}'...")
-        print(f"Sheet has {source_ws.max_row} rows and {source_ws.max_column} columns")
-        
         for row in range(1, source_ws.max_row + 1):
             for col in range(1, source_ws.max_column + 1):
                 cell = source_ws.cell(row=row, column=col)
                 if cell.value:
                     cell_text = str(cell.value).strip()
-                    print(f"Found cell at ({row}, {col}): '{cell_text}'")
                     if cell_text == "アクションNo.":
                         header_cell = cell
                         header_row = row
                         header_col = col
-                        print(f"Header found at row {header_row}, column {header_col}")
                         break
             if header_cell:
                 break
         
         if not header_cell:
-            print("Header 'アクションNo.' not found!")
             raise ValueError("Không tìm thấy cột 'アクションNo.' trong sheet mocks")
         
         if progress_callback:
@@ -444,20 +438,16 @@ def copy_action_data(test_file_path, doc_file_path, progress_callback=None):
         
         # Get all data below the header in the same column
         data_to_copy = []
-        print(f"Looking for data in column {header_col} starting from row {header_row + 1}...")
         
         for row in range(header_row + 1, source_ws.max_row + 1):
             cell = source_ws.cell(row=row, column=header_col)
             if cell.value is not None:  # Only copy non-empty cells
-                print(f"Found data at row {row}: '{cell.value}'")
                 data_to_copy.append(cell)
             # Continue even if we encounter empty cells to get all data
         
         # Remove trailing empty cells if any
         while data_to_copy and data_to_copy[-1].value is None:
             data_to_copy.pop()
-        
-        print(f"Total data items to copy: {len(data_to_copy)}")
         
         if not data_to_copy:
             raise ValueError("Không có dữ liệu nào trong cột 'アクションNo.' để copy")
@@ -482,8 +472,6 @@ def copy_action_data(test_file_path, doc_file_path, progress_callback=None):
         dest_header_row = None
         dest_header_col = None
         
-        print(f"Searching for 'アクションNo.' in destination sheet '{sheet_name}'...")
-        
         for row in range(1, dest_ws.max_row + 1):
             for col in range(1, dest_ws.max_column + 1):
                 cell = dest_ws.cell(row=row, column=col)
@@ -491,7 +479,6 @@ def copy_action_data(test_file_path, doc_file_path, progress_callback=None):
                     dest_header_cell = cell
                     dest_header_row = row
                     dest_header_col = col
-                    print(f"Destination header found at row {dest_header_row}, column {dest_header_col}")
                     break
             if dest_header_cell:
                 break
@@ -501,15 +488,12 @@ def copy_action_data(test_file_path, doc_file_path, progress_callback=None):
             dest_header_row = 1
             dest_header_col = 1
             dest_ws.cell(row=dest_header_row, column=dest_header_col, value="アクションNo.")
-            print(f"Created new header at row {dest_header_row}, column {dest_header_col}")
         
         if progress_callback:
             progress_callback("Đang sao chép dữ liệu...")
         
         # Paste data below the header in destination
         paste_start_row = dest_header_row + 1
-        
-        print(f"Starting to paste {len(data_to_copy)} items from row {paste_start_row}, column {dest_header_col}")
         
         for idx, source_cell in enumerate(data_to_copy):
             dest_cell = dest_ws.cell(
@@ -519,7 +503,6 @@ def copy_action_data(test_file_path, doc_file_path, progress_callback=None):
             
             # Copy cell value
             dest_cell.value = source_cell.value
-            print(f"Pasted '{source_cell.value}' to row {paste_start_row + idx}")
             
             # Copy cell formatting if source cell has formatting
             if source_cell.has_style:
@@ -552,7 +535,7 @@ def copy_action_data(test_file_path, doc_file_path, progress_callback=None):
                         action_header_cell = cell
                         action_header_row = row
                         action_header_col = col
-                        print(f"Action header found at row {action_header_row}, column {action_header_col}")
+
                         break
             if action_header_cell:
                 break
@@ -563,7 +546,7 @@ def copy_action_data(test_file_path, doc_file_path, progress_callback=None):
             for row in range(action_header_row + 1, source_ws.max_row + 1):
                 cell = source_ws.cell(row=row, column=action_header_col)
                 if cell.value is not None:
-                    print(f"Found action data at row {row}: '{cell.value}'")
+
                     action_data.append(cell)
             
             if action_data:
@@ -1192,8 +1175,302 @@ def copy_action_data(test_file_path, doc_file_path, progress_callback=None):
         else:
             print("No data found to determine row count for border-only columns")
 
-        print("Row merging has been disabled - data will remain as copied from source")
-
+        # Process row merging for No. and 想定結果 columns
+        if progress_callback:
+            progress_callback("Đang gộp hàng có cùng điều kiện...")
+        
+        # Find columns for merging
+        no_col = None
+        action_no_col = None
+        koumoku_col = None  # 項目
+        sousa_col = None    # 操作
+        soutei_col = None
+        
+        for row in range(1, dest_ws.max_row + 1):
+            for col in range(1, dest_ws.max_column + 1):
+                cell = dest_ws.cell(row=row, column=col)
+                if cell.value:
+                    cell_text = str(cell.value).strip()
+                    if cell_text == "No." and no_col is None:
+                        no_col = col
+                    elif cell_text == "アクションNo." and action_no_col is None:
+                        action_no_col = col
+                    elif cell_text == "項目" and koumoku_col is None:
+                        koumoku_col = col
+                    elif cell_text == "操作" and sousa_col is None:
+                        sousa_col = col
+                    elif cell_text == "想定結果" and soutei_col is None:
+                        soutei_col = col
+        
+        rows_processed = 0
+        rows_deleted = 0
+        
+        if no_col is not None and action_no_col is not None and soutei_col is not None:
+            print(f"DEBUG: Found No. column at {no_col}, アクションNo. column at {action_no_col}, 項目 column at {koumoku_col}, 操作 column at {sousa_col}, 想定結果 column at {soutei_col}")
+            print(f"DEBUG: Processing rows from 2 to {dest_ws.max_row}")
+            
+            # Get all data rows (skip header row)
+            data_rows = []
+            for row in range(2, dest_ws.max_row + 1):  # Start from row 2 to skip headers
+                no_cell = dest_ws.cell(row=row, column=no_col)
+                action_no_cell = dest_ws.cell(row=row, column=action_no_col)
+                soutei_cell = dest_ws.cell(row=row, column=soutei_col)
+                
+                # Only process rows that have data in all three columns
+                if no_cell.value is not None and action_no_cell.value is not None and soutei_cell.value is not None:
+                    no_value = str(no_cell.value).strip()
+                    action_no_value = str(action_no_cell.value).strip()
+                    soutei_value = str(soutei_cell.value).strip()
+                    
+                    # Split 想定結果 by newlines to get first line and second line
+                    soutei_lines = soutei_value.split('\n')
+                    first_line = soutei_lines[0].strip() if soutei_lines else ""
+                    second_line = soutei_lines[1].strip() if len(soutei_lines) > 1 else ""
+                    
+                    print(f"DEBUG: Row {row} - No='{no_value}', ActionNo='{action_no_value}', First line='{first_line[:50]}...'")
+                    
+                    data_rows.append({
+                        'row': row,
+                        'no_value': no_value,
+                        'action_no_value': action_no_value,
+                        'soutei_value': soutei_value,
+                        'soutei_first_line': first_line,
+                        'soutei_second_line': second_line,
+                        'soutei_lines': soutei_lines
+                    })
+                else:
+                    print(f"DEBUG: Row {row} skipped - No='{no_cell.value}', ActionNo='{action_no_cell.value}', 想定結果='{soutei_cell.value}'")
+            
+            # Group rows by No., ActionNo. and first line of 想定結果
+            groups = {}
+            for data_row in data_rows:
+                key = f"{data_row['no_value']}||{data_row['action_no_value']}||{data_row['soutei_first_line']}"
+                if key not in groups:
+                    groups[key] = []
+                groups[key].append(data_row)
+            
+            # Debug: Print all groups found
+            print(f"DEBUG: Found {len(groups)} groups:")
+            for key, group_rows in groups.items():
+                print(f"  Group '{key}': {len(group_rows)} rows")
+                for row_data in group_rows:
+                    print(f"    Row {row_data['row']}: No='{row_data['no_value']}', ActionNo='{row_data['action_no_value']}', First line='{row_data['soutei_first_line']}'")
+            
+            # Process each group that has multiple rows
+            rows_to_delete = []
+            
+            for key, group_rows in groups.items():
+                if len(group_rows) > 1:  # Only process groups with multiple rows
+                    # Sort by row number to ensure consistent processing
+                    group_rows.sort(key=lambda x: x['row'])
+                    
+                    # First row will be the target row
+                    target_row = group_rows[0]
+                    
+                    # Collect all second lines from rows 2 onwards in this group
+                    additional_lines = []
+                    for row_data in group_rows[1:]:  # Skip first row
+                        print(f"DEBUG: Processing row {row_data['row']} (No='{row_data['no_value']}', ActionNo='{row_data['action_no_value']}') for deletion")
+                        if row_data['soutei_second_line']:
+                            additional_lines.append(row_data['soutei_second_line'])
+                        # Mark this row for deletion
+                        rows_to_delete.append(row_data['row'])
+                    
+                    # Update target row's 想定結果 with combined data
+                    if additional_lines:
+                        # Combine: first_line + original_second_line + additional_lines
+                        all_lines = [target_row['soutei_first_line']]
+                        if target_row['soutei_second_line']:
+                            all_lines.append(target_row['soutei_second_line'])
+                        all_lines.extend(additional_lines)
+                        
+                        new_soutei_value = '\n'.join(all_lines)
+                        
+                        # Update the target cell
+                        target_cell = dest_ws.cell(row=target_row['row'], column=soutei_col)
+                        target_cell.value = new_soutei_value
+                    
+                    rows_processed += 1
+            
+            # Delete marked rows in reverse order (from bottom to top to avoid index shifting)
+            if rows_to_delete:
+                print(f"DEBUG: Rows marked for deletion: {sorted(rows_to_delete)}")
+                rows_to_delete.sort(reverse=True)  # Sort in descending order
+                
+                for row_num in rows_to_delete:
+                    # Get No. and ActionNo. values before deletion for debug
+                    no_cell = dest_ws.cell(row=row_num, column=no_col)
+                    action_no_cell = dest_ws.cell(row=row_num, column=action_no_col)
+                    no_value = str(no_cell.value).strip() if no_cell.value else "None"
+                    action_no_value = str(action_no_cell.value).strip() if action_no_cell.value else "None"
+                    print(f"DEBUG: Deleting row {row_num} (No='{no_value}', ActionNo='{action_no_value}')")
+                    dest_ws.delete_rows(row_num)
+                
+                rows_deleted = len(rows_to_delete)
+            else:
+                print("DEBUG: No rows marked for deletion")
+        else:
+            print(f"DEBUG: Required columns not found - No.: {no_col}, ActionNo.: {action_no_col}, 想定結果: {soutei_col}")
+        
+        # Merge cells in アクションNo. column for rows with same ActionNo
+        if progress_callback:
+            progress_callback("Đang merge cột アクションNo....")
+        
+        action_merges = 0
+        
+        if action_no_col is not None:
+            print(f"DEBUG: Processing ActionNo column merging at column {action_no_col}")
+            
+            # Get all data rows after previous processing
+            current_max_row = dest_ws.max_row
+            
+            # Collect ActionNo values and their row ranges
+            action_groups = []
+            current_group = None
+            
+            for row in range(2, current_max_row + 1):  # Start from row 2 to skip headers
+                action_cell = dest_ws.cell(row=row, column=action_no_col)
+                action_value = str(action_cell.value).strip() if action_cell.value else ""
+                
+                if action_value:  # Only process non-empty cells
+                    if current_group is None or current_group['value'] != action_value:
+                        # Start new group
+                        if current_group is not None:
+                            action_groups.append(current_group)
+                        current_group = {
+                            'value': action_value,
+                            'start_row': row,
+                            'end_row': row
+                        }
+                    else:
+                        # Extend current group
+                        current_group['end_row'] = row
+            
+            # Add the last group
+            if current_group is not None:
+                action_groups.append(current_group)
+            
+            # Process merging for groups with multiple rows
+            for group in action_groups:
+                if group['end_row'] > group['start_row']:  # Multiple rows
+                    start_row = group['start_row']
+                    end_row = group['end_row']
+                    print(f"DEBUG: Merging ActionNo '{group['value']}' from row {start_row} to {end_row}")
+                    
+                    # Merge the cells in ActionNo column
+                    dest_ws.merge_cells(start_row=start_row, start_column=action_no_col, 
+                                       end_row=end_row, end_column=action_no_col)
+                    
+                    action_merges += 1
+        
+        print(f"DEBUG: Completed ActionNo column merging - {action_merges} groups merged")
+        
+        # Merge cells in 項目 column for rows with same 項目
+        if progress_callback:
+            progress_callback("Đang merge cột 項目...")
+        
+        koumoku_merges = 0
+        
+        if koumoku_col is not None:
+            print(f"DEBUG: Processing 項目 column merging at column {koumoku_col}")
+            
+            # Get all data rows after previous processing
+            current_max_row = dest_ws.max_row
+            
+            # Collect 項目 values and their row ranges
+            koumoku_groups = []
+            current_group = None
+            
+            for row in range(2, current_max_row + 1):  # Start from row 2 to skip headers
+                koumoku_cell = dest_ws.cell(row=row, column=koumoku_col)
+                koumoku_value = str(koumoku_cell.value).strip() if koumoku_cell.value else ""
+                
+                if koumoku_value:  # Only process non-empty cells
+                    if current_group is None or current_group['value'] != koumoku_value:
+                        # Start new group
+                        if current_group is not None:
+                            koumoku_groups.append(current_group)
+                        current_group = {
+                            'value': koumoku_value,
+                            'start_row': row,
+                            'end_row': row
+                        }
+                    else:
+                        # Extend current group
+                        current_group['end_row'] = row
+            
+            # Add the last group
+            if current_group is not None:
+                koumoku_groups.append(current_group)
+            
+            # Process merging for groups with multiple rows
+            for group in koumoku_groups:
+                if group['end_row'] > group['start_row']:  # Multiple rows
+                    start_row = group['start_row']
+                    end_row = group['end_row']
+                    print(f"DEBUG: Merging 項目 '{group['value']}' from row {start_row} to {end_row}")
+                    
+                    # Merge the cells in 項目 column
+                    dest_ws.merge_cells(start_row=start_row, start_column=koumoku_col, 
+                                       end_row=end_row, end_column=koumoku_col)
+                    
+                    koumoku_merges += 1
+        
+        print(f"DEBUG: Completed 項目 column merging - {koumoku_merges} groups merged")
+        
+        # Merge cells in 操作 column for rows with same 操作
+        if progress_callback:
+            progress_callback("Đang merge cột 操作...")
+        
+        sousa_merges = 0
+        
+        if sousa_col is not None:
+            print(f"DEBUG: Processing 操作 column merging at column {sousa_col}")
+            
+            # Get all data rows after previous processing
+            current_max_row = dest_ws.max_row
+            
+            # Collect 操作 values and their row ranges
+            sousa_groups = []
+            current_group = None
+            
+            for row in range(2, current_max_row + 1):  # Start from row 2 to skip headers
+                sousa_cell = dest_ws.cell(row=row, column=sousa_col)
+                sousa_value = str(sousa_cell.value).strip() if sousa_cell.value else ""
+                
+                if sousa_value:  # Only process non-empty cells
+                    if current_group is None or current_group['value'] != sousa_value:
+                        # Start new group
+                        if current_group is not None:
+                            sousa_groups.append(current_group)
+                        current_group = {
+                            'value': sousa_value,
+                            'start_row': row,
+                            'end_row': row
+                        }
+                    else:
+                        # Extend current group
+                        current_group['end_row'] = row
+            
+            # Add the last group
+            if current_group is not None:
+                sousa_groups.append(current_group)
+            
+            # Process merging for groups with multiple rows
+            for group in sousa_groups:
+                if group['end_row'] > group['start_row']:  # Multiple rows
+                    start_row = group['start_row']
+                    end_row = group['end_row']
+                    print(f"DEBUG: Merging 操作 '{group['value']}' from row {start_row} to {end_row}")
+                    
+                    # Merge the cells in 操作 column
+                    dest_ws.merge_cells(start_row=start_row, start_column=sousa_col, 
+                                       end_row=end_row, end_column=sousa_col)
+                    
+                    sousa_merges += 1
+        
+        print(f"DEBUG: Completed 操作 column merging - {sousa_merges} groups merged")
+            
         if progress_callback:
             progress_callback("Đang lưu file...")
         
@@ -1230,6 +1507,11 @@ def copy_action_data(test_file_path, doc_file_path, progress_callback=None):
             "soutei_target_created": "想定結果" if 'shori_gaiyo_header_cell' in locals() and shori_gaiyo_header_cell and 'nyuryoku_param_header_cell' in locals() and nyuryoku_param_header_cell else "None",
             "additional_condition_columns_filled": columns_filled,
             "border_only_columns_processed": columns_bordered,
+            "groups_processed": rows_processed if 'rows_processed' in locals() else 0,
+            "rows_deleted": rows_deleted if 'rows_deleted' in locals() else 0,
+            "action_merges": action_merges if 'action_merges' in locals() else 0,
+            "koumoku_merges": koumoku_merges if 'koumoku_merges' in locals() else 0,
+            "sousa_merges": sousa_merges if 'sousa_merges' in locals() else 0,
             "status": "success"
         }
         
@@ -1457,7 +1739,11 @@ def get_action_copy_preview(test_file_path, doc_file_path):
 • Kết hợp dữ liệu từ "処理概要" và "入力パラメータ" sang "想定結果" (chỉ kết hợp khi "入力パラメータ" khác rỗng và khác "-")
 • Điền giá trị "-" và border vào các cột có sẵn "処理条件②" đến "処理条件⑥"
 • Thêm border vào các cột có sẵn "実施者", "実施日", "結果" (không điền dữ liệu)
-• Tất cả dữ liệu giữ nguyên như file mocks (không merge cells, không gộp hàng)
+• Copy dữ liệu giữ nguyên như file mocks (không merge consecutive cells)
+• Gộp hàng có cùng "No.", "アクションNo." và dòng đầu "想定結果", kết hợp dòng thứ 2 vào hàng đầu tiên, xóa hàng trùng
+• Merge cells trong cột "アクションNo." cho các hàng có cùng ActionNo (chỉ merge cột này)
+• Merge cells trong cột "項目" cho các hàng có cùng 項目 (chỉ merge cột này)
+• Merge cells trong cột "操作" cho các hàng có cùng 操作 (chỉ merge cột này)
 • Copy cả formatting (colors, fonts, borders)
 • Nếu không tìm thấy header trong file đích, sẽ tạo mới tại A1{preview_info}
 
