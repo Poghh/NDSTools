@@ -380,7 +380,7 @@ class UnitTestTab:
 📊 Dữ liệu kết hợp: {result['combined_data_copied']} items
 📝 Cột đã điền: {', '.join(result['additional_condition_columns_filled'])}
 🔲 Cột border: {', '.join(result['border_only_columns_processed'])}
-🔄 Hàng đã gộp: {result['rows_merged']} hàng
+📝 Không merge: Tất cả dữ liệu giữ nguyên như file mocks
 ✅ Trạng thái: {result['status']}
                 """
             else:

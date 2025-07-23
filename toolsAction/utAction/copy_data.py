@@ -532,51 +532,7 @@ def copy_action_data(test_file_path, doc_file_path, progress_callback=None):
                 dest_cell.protection = copy(source_cell.protection)
                 dest_cell.alignment = copy(source_cell.alignment)
         
-        if progress_callback:
-            progress_callback("Đang merge các cells có cùng giá trị...")
-        
-        # Merge consecutive cells with the same value
-        current_value = None
-        merge_start_row = None
-        
-        for idx in range(len(data_to_copy)):
-            row_num = paste_start_row + idx
-            cell = dest_ws.cell(row=row_num, column=dest_header_col)
-            cell_value = str(cell.value).strip() if cell.value else ""
-            
-            if cell_value == current_value:
-                # Continue the current merge group
-                continue
-            else:
-                # End previous merge group if it exists
-                if merge_start_row is not None and merge_start_row < row_num - 1:
-                    try:
-                        dest_ws.merge_cells(
-                            start_row=merge_start_row,
-                            start_column=dest_header_col,
-                            end_row=row_num - 1,
-                            end_column=dest_header_col
-                        )
-                        print(f"Merged cells from row {merge_start_row} to {row_num - 1} with value '{current_value}'")
-                    except Exception as e:
-                        print(f"Warning: Could not merge cells for value '{current_value}': {e}")
-                
-                # Start new merge group
-                current_value = cell_value
-                merge_start_row = row_num
-        
-        # Handle the last merge group
-        if merge_start_row is not None and merge_start_row < paste_start_row + len(data_to_copy) - 1:
-            try:
-                dest_ws.merge_cells(
-                    start_row=merge_start_row,
-                    start_column=dest_header_col,
-                    end_row=paste_start_row + len(data_to_copy) - 1,
-                    end_column=dest_header_col
-                )
-                print(f"Merged final cells from row {merge_start_row} to {paste_start_row + len(data_to_copy) - 1} with value '{current_value}'")
-            except Exception as e:
-                print(f"Warning: Could not merge final cells for value '{current_value}': {e}")
+        print(f"Completed copying {len(data_to_copy)} items to アクションNo. column (no merging applied)")
 
         # Also copy data from "アクション" column to "項目" and "操作" columns
         if progress_callback:
@@ -659,46 +615,7 @@ def copy_action_data(test_file_path, doc_file_path, progress_callback=None):
                             dest_cell.protection = copy(source_cell.protection)
                             dest_cell.alignment = copy(source_cell.alignment)
                     
-                    # Merge consecutive cells with same value for this column too
-                    current_value = None
-                    merge_start_row = None
-                    
-                    for idx in range(len(action_data)):
-                        row_num = target_start_row + idx
-                        cell = dest_ws.cell(row=row_num, column=target_col)
-                        cell_value = str(cell.value).strip() if cell.value else ""
-                        
-                        if cell_value == current_value:
-                            continue
-                        else:
-                            # End previous merge group if it exists
-                            if merge_start_row is not None and merge_start_row < row_num - 1:
-                                try:
-                                    dest_ws.merge_cells(
-                                        start_row=merge_start_row,
-                                        start_column=target_col,
-                                        end_row=row_num - 1,
-                                        end_column=target_col
-                                    )
-                                    print(f"Merged {target_name} cells from row {merge_start_row} to {row_num - 1}")
-                                except Exception as e:
-                                    print(f"Warning: Could not merge {target_name} cells: {e}")
-                            
-                            current_value = cell_value
-                            merge_start_row = row_num
-                    
-                    # Handle the last merge group
-                    if merge_start_row is not None and merge_start_row < target_start_row + len(action_data) - 1:
-                        try:
-                            dest_ws.merge_cells(
-                                start_row=merge_start_row,
-                                start_column=target_col,
-                                end_row=target_start_row + len(action_data) - 1,
-                                end_column=target_col
-                            )
-                            print(f"Merged final {target_name} cells from row {merge_start_row} to {target_start_row + len(action_data) - 1}")
-                        except Exception as e:
-                            print(f"Warning: Could not merge final {target_name} cells: {e}")
+                    print(f"Completed copying {len(action_data)} items to {target_name} column (no merging applied)")
             else:
                 print("No data found in アクション column")
         else:
@@ -1275,129 +1192,7 @@ def copy_action_data(test_file_path, doc_file_path, progress_callback=None):
         else:
             print("No data found to determine row count for border-only columns")
 
-        # Process and merge rows with same No. and first line of 想定結果
-        if progress_callback:
-            progress_callback("Đang xử lý gộp các hàng trùng điều kiện...")
-        
-        # Find No. and 想定結果 columns in destination
-        no_col = None
-        soutei_col = None
-        
-        for row in range(1, dest_ws.max_row + 1):
-            for col in range(1, dest_ws.max_column + 1):
-                cell = dest_ws.cell(row=row, column=col)
-                if cell.value:
-                    cell_text = str(cell.value).strip()
-                    if cell_text == "No." and no_col is None:
-                        no_col = col
-                        print(f"Found 'No.' column at {col}")
-                    elif cell_text == "想定結果" and soutei_col is None:
-                        soutei_col = col
-                        print(f"Found '想定結果' column at {col}")
-        
-        rows_merged = 0
-        if no_col is not None and soutei_col is not None:
-            print(f"Processing merge for columns No.({no_col}) and 想定結果({soutei_col})")
-            
-            # Get all data rows (skip header row)
-            data_rows = []
-            for row in range(2, dest_ws.max_row + 1):  # Start from row 2 to skip headers
-                no_cell = dest_ws.cell(row=row, column=no_col)
-                soutei_cell = dest_ws.cell(row=row, column=soutei_col)
-                
-                # Only process rows that have data in both columns
-                if no_cell.value is not None and soutei_cell.value is not None:
-                    no_value = str(no_cell.value).strip()
-                    soutei_value = str(soutei_cell.value).strip()
-                    
-                    # Split 想定結果 by newlines to get first line
-                    soutei_lines = soutei_value.split('\n')
-                    first_line = soutei_lines[0].strip() if soutei_lines else ""
-                    
-                    data_rows.append({
-                        'row': row,
-                        'no_value': no_value,
-                        'soutei_value': soutei_value,
-                        'soutei_first_line': first_line,
-                        'soutei_lines': soutei_lines
-                    })
-            
-            print(f"Found {len(data_rows)} data rows to process")
-            
-            # Keep merging until no more merges are possible
-            merge_happened = True
-            iteration = 0
-            while merge_happened:
-                merge_happened = False
-                iteration += 1
-                print(f"Merge iteration {iteration}")
-                
-                # Compare each row with rows below it
-                i = 0
-                while i < len(data_rows):
-                    j = i + 1
-                    while j < len(data_rows):
-                        row1 = data_rows[i]
-                        row2 = data_rows[j]
-                        
-                        # Check if they should be merged
-                        if (row1['no_value'] == row2['no_value'] and 
-                            row1['soutei_first_line'] == row2['soutei_first_line'] and
-                            row1['no_value'] != "" and row1['soutei_first_line'] != ""):
-                            
-                            print(f"Merging row {row2['row']} into row {row1['row']}")
-                            print(f"  No. value: '{row1['no_value']}'")
-                            print(f"  想定結果 first line: '{row1['soutei_first_line']}'")
-                            
-                            # Get second line from row2 (if exists)
-                            if len(row2['soutei_lines']) > 1:
-                                second_line = row2['soutei_lines'][1].strip()
-                                if second_line:  # Only add if second line has content
-                                    # Append second line to row1's 想定結果
-                                    new_soutei_value = row1['soutei_value'] + '\n' + second_line
-                                    
-                                    # Update the cell in the worksheet
-                                    soutei_cell1 = dest_ws.cell(row=row1['row'], column=soutei_col)
-                                    soutei_cell1.value = new_soutei_value
-                                    
-                                    # Update our data structure
-                                    row1['soutei_value'] = new_soutei_value
-                                    row1['soutei_lines'] = new_soutei_value.split('\n')
-                                    
-                                    print(f"  Added second line: '{second_line}'")
-                                else:
-                                    print(f"  No second line to add from row {row2['row']}")
-                            else:
-                                print(f"  Row {row2['row']} has no second line")
-                            
-                            # Delete row2 from worksheet
-                            dest_ws.delete_rows(row2['row'])
-                            print(f"  Deleted row {row2['row']}")
-                            
-                            # Update row numbers for all remaining rows
-                            for k in range(len(data_rows)):
-                                if data_rows[k]['row'] > row2['row']:
-                                    data_rows[k]['row'] -= 1
-                            
-                            # Remove row2 from our data structure
-                            data_rows.pop(j)
-                            rows_merged += 1
-                            merge_happened = True
-                            
-                            # Don't increment j since we removed an element
-                            continue
-                        
-                        j += 1
-                    i += 1
-                
-                print(f"Iteration {iteration} completed. Merge happened: {merge_happened}")
-            
-            print(f"Total rows merged: {rows_merged}")
-        else:
-            if no_col is None:
-                print("No. column not found for merging")
-            if soutei_col is None:
-                print("想定結果 column not found for merging")
+        print("Row merging has been disabled - data will remain as copied from source")
 
         if progress_callback:
             progress_callback("Đang lưu file...")
@@ -1435,7 +1230,6 @@ def copy_action_data(test_file_path, doc_file_path, progress_callback=None):
             "soutei_target_created": "想定結果" if 'shori_gaiyo_header_cell' in locals() and shori_gaiyo_header_cell and 'nyuryoku_param_header_cell' in locals() and nyuryoku_param_header_cell else "None",
             "additional_condition_columns_filled": columns_filled,
             "border_only_columns_processed": columns_bordered,
-            "rows_merged": rows_merged if 'rows_merged' in locals() else 0,
             "status": "success"
         }
         
@@ -1655,15 +1449,15 @@ def get_action_copy_preview(test_file_path, doc_file_path):
 • Tìm header "アクションNo." trong sheet "アクション一覧" của file mocks
 • Copy toàn bộ dữ liệu bên dưới header này (cùng cột)
 • Paste dữ liệu vào bên dưới header trong file unit test
-• Merge các cells liên tiếp có cùng giá trị cho cột "アクションNo."
-• Tìm cột "アクション" và copy dữ liệu sang 2 cột "項目" và "操作" (có merge)
+• Copy dữ liệu sang cột "アクションNo." (không merge consecutive cells)
+• Tìm cột "アクション" và copy dữ liệu sang 2 cột "項目" và "操作" (không merge consecutive cells)
 • Tìm cột "処理条件" và copy dữ liệu sang cột "処理条件①" (không merge)
 • Tìm cột "API URL" và copy dữ liệu sang cột "WEBAPI" (không merge)
 • Tìm cột chứa "処理No." và copy dữ liệu sang cột "No." (không merge, chỉ giữ ký tự cuối)
 • Kết hợp dữ liệu từ "処理概要" và "入力パラメータ" sang "想定結果" (chỉ kết hợp khi "入力パラメータ" khác rỗng và khác "-")
 • Điền giá trị "-" và border vào các cột có sẵn "処理条件②" đến "処理条件⑥"
 • Thêm border vào các cột có sẵn "実施者", "実施日", "結果" (không điền dữ liệu)
-• Gộp các hàng có cùng "No." và dòng đầu "想定結果" (thêm dòng 2 vào hàng trên, xóa hàng dưới)
+• Tất cả dữ liệu giữ nguyên như file mocks (không merge cells, không gộp hàng)
 • Copy cả formatting (colors, fonts, borders)
 • Nếu không tìm thấy header trong file đích, sẽ tạo mới tại A1{preview_info}
 
