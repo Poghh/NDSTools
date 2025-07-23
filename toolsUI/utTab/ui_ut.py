@@ -374,11 +374,13 @@ class UnitTestTab:
 🔢 Cột 処理No.: {'Tìm thấy' if result['shori_no_column_found'] else 'Không tìm thấy'}
 📋 Copy sang: {result['no_target_created']}
 📊 Dữ liệu 処理No.: {result['shori_no_data_copied']} items
+✂️ Dữ liệu đã format: {result['no_data_formatted']} items (chỉ giữ ký tự cuối)
 🔗 Cột kết hợp: {'Tìm thấy cả 2' if result['combined_columns_found'] else 'Không đủ cột'}
 📋 Copy sang: {result['soutei_target_created']}
 📊 Dữ liệu kết hợp: {result['combined_data_copied']} items
 📝 Cột đã điền: {', '.join(result['additional_condition_columns_filled'])}
 🔲 Cột border: {', '.join(result['border_only_columns_processed'])}
+🔄 Hàng đã gộp: {result['rows_merged']} hàng
 ✅ Trạng thái: {result['status']}
                 """
             else:

@@ -3,7 +3,7 @@ import tkinter as tk
 from tkinter import messagebox
 from openpyxl import load_workbook
 from openpyxl.utils import get_column_letter
-from openpyxl.styles import Border, Side
+from openpyxl.styles import Border, Side, Font
 from copy import copy
 
 
@@ -523,7 +523,9 @@ def copy_action_data(test_file_path, doc_file_path, progress_callback=None):
             
             # Copy cell formatting if source cell has formatting
             if source_cell.has_style:
-                dest_cell.font = copy(source_cell.font)
+                current_font = copy(source_cell.font)
+                current_font.color = "000000"  # Set font color to black
+                dest_cell.font = current_font
                 dest_cell.border = copy(source_cell.border)
                 dest_cell.fill = copy(source_cell.fill)
                 dest_cell.number_format = source_cell.number_format
@@ -955,6 +957,41 @@ def copy_action_data(test_file_path, doc_file_path, progress_callback=None):
                         dest_cell.number_format = source_cell.number_format
                         dest_cell.protection = copy(source_cell.protection)
                         dest_cell.alignment = copy(source_cell.alignment)
+                
+                # Format No. column data - keep only the last character
+                if progress_callback:
+                    progress_callback("Đang format cột No. - chỉ giữ ký tự cuối...")
+                
+                print("Formatting No. column data to keep only last character...")
+                for idx, source_cell in enumerate(shori_no_data):
+                    dest_cell = dest_ws.cell(
+                        row=target_start_row + idx,
+                        column=target_no_col
+                    )
+                    
+                    # Get the current value and keep only the last character
+                    current_value = str(dest_cell.value).strip() if dest_cell.value is not None else ""
+                    if current_value:
+                        last_char = current_value[-1]  # Get the last character
+                        
+                        # Check if it's a number and format appropriately
+                        if last_char.isdigit():
+                            dest_cell.value = int(last_char)  # Set as integer to avoid text format warning
+                            dest_cell.number_format = '0'  # Format as number
+                        else:
+                            dest_cell.value = last_char  # Set as text
+                            dest_cell.number_format = '@'  # Format as text
+                        
+                        # Set font color to black
+                        if dest_cell.font:
+                            from openpyxl.styles import Font
+                            current_font = copy(dest_cell.font)
+                            current_font.color = "000000"  # Black color
+                            dest_cell.font = current_font
+                        
+                        print(f"Formatted No. at row {target_start_row + idx}: '{current_value}' → '{last_char}' ({'number' if last_char.isdigit() else 'text'})")
+                    else:
+                        print(f"No data to format at row {target_start_row + idx}")
             else:
                 print("No data found in 処理No. column")
         else:
@@ -1024,14 +1061,22 @@ def copy_action_data(test_file_path, doc_file_path, progress_callback=None):
                 shori_gaiyo_value = str(shori_gaiyo_cell.value).strip() if shori_gaiyo_cell.value is not None else ""
                 nyuryoku_param_value = str(nyuryoku_param_cell.value).strip() if nyuryoku_param_cell.value is not None else ""
                 
-                # Skip if both values are empty
-                if not shori_gaiyo_value and not nyuryoku_param_value:
+                # Skip if 処理概要 is empty
+                if not shori_gaiyo_value:
                     continue
                 
-                # Combine values with newline separator
-                combined_value = f"{shori_gaiyo_value}\n{nyuryoku_param_value}" if shori_gaiyo_value and nyuryoku_param_value else (shori_gaiyo_value or nyuryoku_param_value)
+                # Only combine if 入力パラメータ has meaningful data (not empty and not "-")
+                if nyuryoku_param_value and nyuryoku_param_value != "-":
+                    # Combine values with newline separator
+                    combined_value = f"{shori_gaiyo_value}\n{nyuryoku_param_value}"
+                else:
+                    # Only use 処理概要 value
+                    combined_value = shori_gaiyo_value
                 
-                print(f"Combined data at row {row}: '{combined_value.replace(chr(10), '\\n')}'")
+                if nyuryoku_param_value and nyuryoku_param_value != "-":
+                    print(f"Combined data at row {row}: '{combined_value.replace(chr(10), '\\n')}' (処理概要 + 入力パラメータ)")
+                else:
+                    print(f"Single data at row {row}: '{combined_value}' (chỉ 処理概要, 入力パラメータ: '{nyuryoku_param_value or 'rỗng'}')")
                 
                 # Store the combined data with source cell for formatting reference (use the first non-empty cell)
                 source_cell_for_format = shori_gaiyo_cell if shori_gaiyo_cell.value is not None else nyuryoku_param_cell
@@ -1230,6 +1275,130 @@ def copy_action_data(test_file_path, doc_file_path, progress_callback=None):
         else:
             print("No data found to determine row count for border-only columns")
 
+        # Process and merge rows with same No. and first line of 想定結果
+        if progress_callback:
+            progress_callback("Đang xử lý gộp các hàng trùng điều kiện...")
+        
+        # Find No. and 想定結果 columns in destination
+        no_col = None
+        soutei_col = None
+        
+        for row in range(1, dest_ws.max_row + 1):
+            for col in range(1, dest_ws.max_column + 1):
+                cell = dest_ws.cell(row=row, column=col)
+                if cell.value:
+                    cell_text = str(cell.value).strip()
+                    if cell_text == "No." and no_col is None:
+                        no_col = col
+                        print(f"Found 'No.' column at {col}")
+                    elif cell_text == "想定結果" and soutei_col is None:
+                        soutei_col = col
+                        print(f"Found '想定結果' column at {col}")
+        
+        rows_merged = 0
+        if no_col is not None and soutei_col is not None:
+            print(f"Processing merge for columns No.({no_col}) and 想定結果({soutei_col})")
+            
+            # Get all data rows (skip header row)
+            data_rows = []
+            for row in range(2, dest_ws.max_row + 1):  # Start from row 2 to skip headers
+                no_cell = dest_ws.cell(row=row, column=no_col)
+                soutei_cell = dest_ws.cell(row=row, column=soutei_col)
+                
+                # Only process rows that have data in both columns
+                if no_cell.value is not None and soutei_cell.value is not None:
+                    no_value = str(no_cell.value).strip()
+                    soutei_value = str(soutei_cell.value).strip()
+                    
+                    # Split 想定結果 by newlines to get first line
+                    soutei_lines = soutei_value.split('\n')
+                    first_line = soutei_lines[0].strip() if soutei_lines else ""
+                    
+                    data_rows.append({
+                        'row': row,
+                        'no_value': no_value,
+                        'soutei_value': soutei_value,
+                        'soutei_first_line': first_line,
+                        'soutei_lines': soutei_lines
+                    })
+            
+            print(f"Found {len(data_rows)} data rows to process")
+            
+            # Keep merging until no more merges are possible
+            merge_happened = True
+            iteration = 0
+            while merge_happened:
+                merge_happened = False
+                iteration += 1
+                print(f"Merge iteration {iteration}")
+                
+                # Compare each row with rows below it
+                i = 0
+                while i < len(data_rows):
+                    j = i + 1
+                    while j < len(data_rows):
+                        row1 = data_rows[i]
+                        row2 = data_rows[j]
+                        
+                        # Check if they should be merged
+                        if (row1['no_value'] == row2['no_value'] and 
+                            row1['soutei_first_line'] == row2['soutei_first_line'] and
+                            row1['no_value'] != "" and row1['soutei_first_line'] != ""):
+                            
+                            print(f"Merging row {row2['row']} into row {row1['row']}")
+                            print(f"  No. value: '{row1['no_value']}'")
+                            print(f"  想定結果 first line: '{row1['soutei_first_line']}'")
+                            
+                            # Get second line from row2 (if exists)
+                            if len(row2['soutei_lines']) > 1:
+                                second_line = row2['soutei_lines'][1].strip()
+                                if second_line:  # Only add if second line has content
+                                    # Append second line to row1's 想定結果
+                                    new_soutei_value = row1['soutei_value'] + '\n' + second_line
+                                    
+                                    # Update the cell in the worksheet
+                                    soutei_cell1 = dest_ws.cell(row=row1['row'], column=soutei_col)
+                                    soutei_cell1.value = new_soutei_value
+                                    
+                                    # Update our data structure
+                                    row1['soutei_value'] = new_soutei_value
+                                    row1['soutei_lines'] = new_soutei_value.split('\n')
+                                    
+                                    print(f"  Added second line: '{second_line}'")
+                                else:
+                                    print(f"  No second line to add from row {row2['row']}")
+                            else:
+                                print(f"  Row {row2['row']} has no second line")
+                            
+                            # Delete row2 from worksheet
+                            dest_ws.delete_rows(row2['row'])
+                            print(f"  Deleted row {row2['row']}")
+                            
+                            # Update row numbers for all remaining rows
+                            for k in range(len(data_rows)):
+                                if data_rows[k]['row'] > row2['row']:
+                                    data_rows[k]['row'] -= 1
+                            
+                            # Remove row2 from our data structure
+                            data_rows.pop(j)
+                            rows_merged += 1
+                            merge_happened = True
+                            
+                            # Don't increment j since we removed an element
+                            continue
+                        
+                        j += 1
+                    i += 1
+                
+                print(f"Iteration {iteration} completed. Merge happened: {merge_happened}")
+            
+            print(f"Total rows merged: {rows_merged}")
+        else:
+            if no_col is None:
+                print("No. column not found for merging")
+            if soutei_col is None:
+                print("想定結果 column not found for merging")
+
         if progress_callback:
             progress_callback("Đang lưu file...")
         
@@ -1260,11 +1429,13 @@ def copy_action_data(test_file_path, doc_file_path, progress_callback=None):
             "shori_no_column_found": shori_no_header_cell is not None,
             "shori_no_data_copied": len(shori_no_data) if 'shori_no_data' in locals() and shori_no_data else 0,
             "no_target_created": "No." if shori_no_header_cell else "None",
+            "no_data_formatted": len(shori_no_data) if 'shori_no_data' in locals() and shori_no_data else 0,
             "combined_columns_found": shori_gaiyo_header_cell is not None and nyuryoku_param_header_cell is not None,
             "combined_data_copied": len(combined_data) if 'combined_data' in locals() and combined_data else 0,
             "soutei_target_created": "想定結果" if 'shori_gaiyo_header_cell' in locals() and shori_gaiyo_header_cell and 'nyuryoku_param_header_cell' in locals() and nyuryoku_param_header_cell else "None",
             "additional_condition_columns_filled": columns_filled,
             "border_only_columns_processed": columns_bordered,
+            "rows_merged": rows_merged if 'rows_merged' in locals() else 0,
             "status": "success"
         }
         
@@ -1488,10 +1659,11 @@ def get_action_copy_preview(test_file_path, doc_file_path):
 • Tìm cột "アクション" và copy dữ liệu sang 2 cột "項目" và "操作" (có merge)
 • Tìm cột "処理条件" và copy dữ liệu sang cột "処理条件①" (không merge)
 • Tìm cột "API URL" và copy dữ liệu sang cột "WEBAPI" (không merge)
-• Tìm cột chứa "処理No." và copy dữ liệu sang cột "No." (không merge)
-• Kết hợp dữ liệu từ "処理概要" và "入力パラメータ" (ngăn cách xuống dòng) sang "想定結果"
+• Tìm cột chứa "処理No." và copy dữ liệu sang cột "No." (không merge, chỉ giữ ký tự cuối)
+• Kết hợp dữ liệu từ "処理概要" và "入力パラメータ" sang "想定結果" (chỉ kết hợp khi "入力パラメータ" khác rỗng và khác "-")
 • Điền giá trị "-" và border vào các cột có sẵn "処理条件②" đến "処理条件⑥"
 • Thêm border vào các cột có sẵn "実施者", "実施日", "結果" (không điền dữ liệu)
+• Gộp các hàng có cùng "No." và dòng đầu "想定結果" (thêm dòng 2 vào hàng trên, xóa hàng dưới)
 • Copy cả formatting (colors, fonts, borders)
 • Nếu không tìm thấy header trong file đích, sẽ tạo mới tại A1{preview_info}
 
