@@ -3,7 +3,7 @@ from tkinter import filedialog, messagebox
 
 import customtkinter as ctk
 
-from toolsAction.utAction.copy_data import copy_data_action, validate_file_compatibility, get_copy_preview
+from toolsAction.utAction.copy_data import copy_data_action, validate_file_compatibility, get_copy_preview, copy_action_data, get_action_copy_preview
 
 # Set appearance mode and color theme
 ctk.set_appearance_mode("light")
@@ -19,6 +19,9 @@ class UnitTestTab:
         # Store file paths for actions
         self.test_file_path = None
         self.doc_file_path = None
+        
+        # Store current action type
+        self.current_action = None
         
         self.init_ui()
 
@@ -99,19 +102,32 @@ class UnitTestTab:
         action_frame = ctk.CTkFrame(self.tab, corner_radius=16, height=80)
         action_frame.grid(row=1, column=0, columnspan=2, sticky="ew", padx=8, pady=(8, 8))
         action_frame.grid_columnconfigure(0, weight=1)
+        action_frame.grid_columnconfigure(1, weight=1)
         action_frame.grid_propagate(False)
 
-        # Copy data button
+        # Copy data button (first action)
         self.copy_data_btn = ctk.CTkButton(
             action_frame,
-            text="Sao chép dữ liệu",
+            text="Sao chép dữ liệu 項目一覧",
             command=self.copy_data,
             height=32,
             font=ctk.CTkFont(size=12, weight="bold"),
             fg_color="#2563eb",
             hover_color="#1d4ed8"
         )
-        self.copy_data_btn.grid(row=0, column=0, pady=20)
+        self.copy_data_btn.grid(row=0, column=0, padx=(20, 8), pady=20)
+
+        # Copy action data button (second action)
+        self.copy_action_btn = ctk.CTkButton(
+            action_frame,
+            text="Sao chép dữ liệu アクション一覧",
+            command=self.copy_action_data,
+            height=32,
+            font=ctk.CTkFont(size=12, weight="bold"),
+            fg_color="#16a34a",
+            hover_color="#15803d"
+        )
+        self.copy_action_btn.grid(row=0, column=1, padx=(8, 20), pady=20)
 
         # === Preview Section (initially hidden) ===
         self.preview_frame = ctk.CTkFrame(self.tab, corner_radius=16)
@@ -124,11 +140,12 @@ class UnitTestTab:
         preview_header_frame.grid(row=0, column=0, columnspan=2, sticky="ew", padx=16, pady=(16, 8))
         preview_header_frame.grid_columnconfigure(0, weight=1)
 
-        ctk.CTkLabel(
+        self.preview_header_label = ctk.CTkLabel(
             preview_header_frame,
             text="Preview - Sao chép dữ liệu",
             font=ctk.CTkFont(size=14, weight="bold")
-        ).grid(row=0, column=0, sticky="w")
+        )
+        self.preview_header_label.grid(row=0, column=0, sticky="w")
 
         # Close preview button
         self.close_preview_btn = ctk.CTkButton(
@@ -248,6 +265,37 @@ class UnitTestTab:
             except Exception as e:
                 print(f"Error checking compatibility: {e}")
 
+    def copy_action_data(self):
+        """Copy action data from アクション一覧 sheet"""
+        # Check if both files are uploaded
+        if not self.test_file_path:
+            messagebox.showwarning("Thiếu file", "Vui lòng tải file tài liệu mocks trước!")
+            return
+        
+        if not self.doc_file_path:
+            messagebox.showwarning("Thiếu tài liệu", "Vui lòng tải file unit test trước!")
+            return
+        
+        try:
+            # Update preview header for action copy
+            self.preview_header_label.configure(text="Preview - Sao chép dữ liệu アクション一覧")
+            
+            # Show preview in the frame
+            preview = get_action_copy_preview(self.test_file_path, self.doc_file_path)
+            
+            # Clear and populate preview text
+            self.preview_text.configure(state="normal")
+            self.preview_text.delete("1.0", "end")
+            self.preview_text.insert("1.0", preview)
+            self.preview_text.configure(state="disabled")
+            
+            # Show preview frame and store action type
+            self.current_action = "action_copy"
+            self.preview_frame.grid()
+            
+        except Exception as e:
+            messagebox.showerror("Lỗi", f"Không thể hiển thị preview:\n{str(e)}")
+
     def copy_data(self):
         """Copy data from unit test file to mock documentation file"""
         # Check if both files are uploaded
@@ -260,6 +308,9 @@ class UnitTestTab:
             return
         
         try:
+            # Update preview header for data copy
+            self.preview_header_label.configure(text="Preview - Sao chép dữ liệu 項目一覧")
+            
             # Show preview in the frame
             preview = get_copy_preview(self.test_file_path, self.doc_file_path)
             
@@ -269,7 +320,8 @@ class UnitTestTab:
             self.preview_text.insert("1.0", preview)
             self.preview_text.configure(state="disabled")
             
-            # Show preview frame
+            # Show preview frame and store action type
+            self.current_action = "data_copy"
             self.preview_frame.grid()
             
         except Exception as e:
@@ -291,15 +343,54 @@ class UnitTestTab:
                 # You could add a progress bar here if needed
                 print(f"Progress: {message}")
             
-            # Execute the copy action
-            result = copy_data_action(
-                self.test_file_path, 
-                self.doc_file_path, 
-                progress_callback=progress_update
-            )
-            
-            # Show success message with details
-            success_msg = f"""
+            # Execute the appropriate copy action based on current_action
+            if self.current_action == "action_copy":
+                result = copy_action_data(
+                    self.test_file_path, 
+                    self.doc_file_path, 
+                    progress_callback=progress_update
+                )
+                
+                # Show success message for action copy
+                success_msg = f"""
+✅ Sao chép dữ liệu Action hoàn tất!
+
+📁 File mocks (nguồn): {result['test_file']}
+📄 File unit test (đích): {result['doc_file']}
+📋 Sheet: {result['sheet_name']}
+📍 Header tìm thấy tại: {result['header_found_at']}
+📊 Dữ liệu đã copy: {result['data_copied']} items
+📥 Paste vào: {result['paste_location']}
+🆕 Header tạo mới: {'Có' if result['dest_header_created'] else 'Không'}
+🎯 Cột アクション: {'Tìm thấy' if result['action_column_found'] else 'Không tìm thấy'}
+📋 Copy sang cột: {result['target_columns_created']}
+📊 Dữ liệu アクション: {result['action_data_copied']} items
+🔧 Cột 処理条件: {'Tìm thấy' if result['condition_column_found'] else 'Không tìm thấy'}
+📋 Copy sang: {result['condition_target_created']}
+📊 Dữ liệu 処理条件: {result['condition_data_copied']} items
+🌐 Cột API URL: {'Tìm thấy' if result['api_column_found'] else 'Không tìm thấy'}
+📋 Copy sang: {result['webapi_target_created']}
+📊 Dữ liệu API URL: {result['api_data_copied']} items
+🔢 Cột 処理No.: {'Tìm thấy' if result['shori_no_column_found'] else 'Không tìm thấy'}
+📋 Copy sang: {result['no_target_created']}
+📊 Dữ liệu 処理No.: {result['shori_no_data_copied']} items
+🔗 Cột kết hợp: {'Tìm thấy cả 2' if result['combined_columns_found'] else 'Không đủ cột'}
+📋 Copy sang: {result['soutei_target_created']}
+📊 Dữ liệu kết hợp: {result['combined_data_copied']} items
+📝 Cột đã điền: {', '.join(result['additional_condition_columns_filled'])}
+🔲 Cột border: {', '.join(result['border_only_columns_processed'])}
+✅ Trạng thái: {result['status']}
+                """
+            else:
+                # Default to data copy (original functionality)
+                result = copy_data_action(
+                    self.test_file_path, 
+                    self.doc_file_path, 
+                    progress_callback=progress_update
+                )
+                
+                # Show success message for data copy
+                success_msg = f"""
 ✅ Sao chép dữ liệu hoàn tất!
 
 📁 File mocks (nguồn): {result['test_file']}
@@ -314,7 +405,7 @@ class UnitTestTab:
 📄 Bảng borders: Đã thêm từ dòng {result['table_start_row']} đến {result['table_end_row']}
 🗑️ Clean up: Đã xóa sheet data_1 sau khi copy
 ✅ Trạng thái: {result['status']}
-            """
+                """
             
             messagebox.showinfo("Thành công", success_msg.strip())
             

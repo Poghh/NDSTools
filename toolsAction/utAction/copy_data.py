@@ -365,6 +365,920 @@ def copy_data_action(test_file_path, doc_file_path, progress_callback=None):
         raise e
 
 
+def copy_action_data(test_file_path, doc_file_path, progress_callback=None):
+    """
+    Copy data from アクション一覧 sheet in mocks file to アクション一覧 sheet in unit test file
+    Find "アクションNo." column and copy all data below it
+    
+    Args:
+        test_file_path (str): Path to the mocks file (source)
+        doc_file_path (str): Path to the unit test file (destination)
+        progress_callback (function): Optional callback to report progress
+        
+    Returns:
+        dict: Result information
+    """
+    try:
+        if progress_callback:
+            progress_callback("Đang kiểm tra file...")
+        
+        # Validate files exist
+        if not os.path.exists(test_file_path):
+            raise FileNotFoundError(f"Không tìm thấy file mocks: {test_file_path}")
+        
+        if not os.path.exists(doc_file_path):
+            raise FileNotFoundError(f"Không tìm thấy file unit test: {doc_file_path}")
+        
+        # Check if both files are Excel files
+        test_ext = os.path.splitext(test_file_path)[1].lower()
+        doc_ext = os.path.splitext(doc_file_path)[1].lower()
+        
+        if test_ext not in ['.xlsx', '.xls'] or doc_ext not in ['.xlsx', '.xls']:
+            raise ValueError("Cả hai file phải là file Excel (.xlsx hoặc .xls)")
+        
+        if progress_callback:
+            progress_callback("Đang đọc file mocks...")
+        
+        # Load the mocks file (source)
+        source_wb = load_workbook(test_file_path, data_only=True)
+        
+        # Find the アクション一覧 sheet in mocks file
+        sheet_name = "アクション一覧"
+        if sheet_name not in source_wb.sheetnames:
+            raise ValueError(f"Không tìm thấy sheet '{sheet_name}' trong file mocks")
+        
+        source_ws = source_wb[sheet_name]
+        
+        if progress_callback:
+            progress_callback("Đang tìm cột アクションNo....")
+        
+        # Find the "アクションNo." header cell
+        header_cell = None
+        header_row = None
+        header_col = None
+        
+        print(f"Searching for 'アクションNo.' in sheet '{sheet_name}'...")
+        print(f"Sheet has {source_ws.max_row} rows and {source_ws.max_column} columns")
+        
+        for row in range(1, source_ws.max_row + 1):
+            for col in range(1, source_ws.max_column + 1):
+                cell = source_ws.cell(row=row, column=col)
+                if cell.value:
+                    cell_text = str(cell.value).strip()
+                    print(f"Found cell at ({row}, {col}): '{cell_text}'")
+                    if cell_text == "アクションNo.":
+                        header_cell = cell
+                        header_row = row
+                        header_col = col
+                        print(f"Header found at row {header_row}, column {header_col}")
+                        break
+            if header_cell:
+                break
+        
+        if not header_cell:
+            print("Header 'アクションNo.' not found!")
+            raise ValueError("Không tìm thấy cột 'アクションNo.' trong sheet mocks")
+        
+        if progress_callback:
+            progress_callback("Đang đọc dữ liệu từ cột アクションNo....")
+        
+        # Get all data below the header in the same column
+        data_to_copy = []
+        print(f"Looking for data in column {header_col} starting from row {header_row + 1}...")
+        
+        for row in range(header_row + 1, source_ws.max_row + 1):
+            cell = source_ws.cell(row=row, column=header_col)
+            if cell.value is not None:  # Only copy non-empty cells
+                print(f"Found data at row {row}: '{cell.value}'")
+                data_to_copy.append(cell)
+            # Continue even if we encounter empty cells to get all data
+        
+        # Remove trailing empty cells if any
+        while data_to_copy and data_to_copy[-1].value is None:
+            data_to_copy.pop()
+        
+        print(f"Total data items to copy: {len(data_to_copy)}")
+        
+        if not data_to_copy:
+            raise ValueError("Không có dữ liệu nào trong cột 'アクションNo.' để copy")
+        
+        if progress_callback:
+            progress_callback("Đang mở file unit test...")
+        
+        # Load the unit test file (destination)
+        dest_wb = load_workbook(doc_file_path)
+        
+        # Find or create the アクション一覧 sheet in unit test file
+        if sheet_name not in dest_wb.sheetnames:
+            dest_ws = dest_wb.create_sheet(sheet_name)
+        else:
+            dest_ws = dest_wb[sheet_name]
+        
+        if progress_callback:
+            progress_callback("Đang tìm cột アクションNo. trong file unit test...")
+        
+        # Find the "アクションNo." header cell in destination
+        dest_header_cell = None
+        dest_header_row = None
+        dest_header_col = None
+        
+        print(f"Searching for 'アクションNo.' in destination sheet '{sheet_name}'...")
+        
+        for row in range(1, dest_ws.max_row + 1):
+            for col in range(1, dest_ws.max_column + 1):
+                cell = dest_ws.cell(row=row, column=col)
+                if cell.value and str(cell.value).strip() == "アクションNo.":
+                    dest_header_cell = cell
+                    dest_header_row = row
+                    dest_header_col = col
+                    print(f"Destination header found at row {dest_header_row}, column {dest_header_col}")
+                    break
+            if dest_header_cell:
+                break
+        
+        if not dest_header_cell:
+            # If header doesn't exist, create it at A1
+            dest_header_row = 1
+            dest_header_col = 1
+            dest_ws.cell(row=dest_header_row, column=dest_header_col, value="アクションNo.")
+            print(f"Created new header at row {dest_header_row}, column {dest_header_col}")
+        
+        if progress_callback:
+            progress_callback("Đang sao chép dữ liệu...")
+        
+        # Paste data below the header in destination
+        paste_start_row = dest_header_row + 1
+        
+        print(f"Starting to paste {len(data_to_copy)} items from row {paste_start_row}, column {dest_header_col}")
+        
+        for idx, source_cell in enumerate(data_to_copy):
+            dest_cell = dest_ws.cell(
+                row=paste_start_row + idx,
+                column=dest_header_col
+            )
+            
+            # Copy cell value
+            dest_cell.value = source_cell.value
+            print(f"Pasted '{source_cell.value}' to row {paste_start_row + idx}")
+            
+            # Copy cell formatting if source cell has formatting
+            if source_cell.has_style:
+                dest_cell.font = copy(source_cell.font)
+                dest_cell.border = copy(source_cell.border)
+                dest_cell.fill = copy(source_cell.fill)
+                dest_cell.number_format = source_cell.number_format
+                dest_cell.protection = copy(source_cell.protection)
+                dest_cell.alignment = copy(source_cell.alignment)
+        
+        if progress_callback:
+            progress_callback("Đang merge các cells có cùng giá trị...")
+        
+        # Merge consecutive cells with the same value
+        current_value = None
+        merge_start_row = None
+        
+        for idx in range(len(data_to_copy)):
+            row_num = paste_start_row + idx
+            cell = dest_ws.cell(row=row_num, column=dest_header_col)
+            cell_value = str(cell.value).strip() if cell.value else ""
+            
+            if cell_value == current_value:
+                # Continue the current merge group
+                continue
+            else:
+                # End previous merge group if it exists
+                if merge_start_row is not None and merge_start_row < row_num - 1:
+                    try:
+                        dest_ws.merge_cells(
+                            start_row=merge_start_row,
+                            start_column=dest_header_col,
+                            end_row=row_num - 1,
+                            end_column=dest_header_col
+                        )
+                        print(f"Merged cells from row {merge_start_row} to {row_num - 1} with value '{current_value}'")
+                    except Exception as e:
+                        print(f"Warning: Could not merge cells for value '{current_value}': {e}")
+                
+                # Start new merge group
+                current_value = cell_value
+                merge_start_row = row_num
+        
+        # Handle the last merge group
+        if merge_start_row is not None and merge_start_row < paste_start_row + len(data_to_copy) - 1:
+            try:
+                dest_ws.merge_cells(
+                    start_row=merge_start_row,
+                    start_column=dest_header_col,
+                    end_row=paste_start_row + len(data_to_copy) - 1,
+                    end_column=dest_header_col
+                )
+                print(f"Merged final cells from row {merge_start_row} to {paste_start_row + len(data_to_copy) - 1} with value '{current_value}'")
+            except Exception as e:
+                print(f"Warning: Could not merge final cells for value '{current_value}': {e}")
+
+        # Also copy data from "アクション" column to "項目" and "操作" columns
+        if progress_callback:
+            progress_callback("Đang tìm cột アクション...")
+        
+        # Find the "アクション" header cell in source
+        action_header_cell = None
+        action_header_row = None
+        action_header_col = None
+        
+        for row in range(1, source_ws.max_row + 1):
+            for col in range(1, source_ws.max_column + 1):
+                cell = source_ws.cell(row=row, column=col)
+                if cell.value:
+                    cell_text = str(cell.value).strip()
+                    if cell_text == "アクション":
+                        action_header_cell = cell
+                        action_header_row = row
+                        action_header_col = col
+                        print(f"Action header found at row {action_header_row}, column {action_header_col}")
+                        break
+            if action_header_cell:
+                break
+        
+        if action_header_cell:
+            # Get data from アクション column
+            action_data = []
+            for row in range(action_header_row + 1, source_ws.max_row + 1):
+                cell = source_ws.cell(row=row, column=action_header_col)
+                if cell.value is not None:
+                    print(f"Found action data at row {row}: '{cell.value}'")
+                    action_data.append(cell)
+            
+            if action_data:
+                if progress_callback:
+                    progress_callback("Đang copy dữ liệu アクション sang 項目 và 操作...")
+                
+                # Find 項目 and 操作 columns in destination
+                target_columns = {"項目": None, "操作": None}
+                
+                for row in range(1, dest_ws.max_row + 1):
+                    for col in range(1, dest_ws.max_column + 1):
+                        cell = dest_ws.cell(row=row, column=col)
+                        if cell.value:
+                            cell_text = str(cell.value).strip()
+                            if cell_text in target_columns and target_columns[cell_text] is None:
+                                target_columns[cell_text] = {"row": row, "col": col}
+                                print(f"Found target column '{cell_text}' at row {row}, column {col}")
+                
+                # Create headers if they don't exist
+                next_col = dest_ws.max_column + 1
+                for header_name, header_info in target_columns.items():
+                    if header_info is None:
+                        dest_ws.cell(row=1, column=next_col, value=header_name)
+                        target_columns[header_name] = {"row": 1, "col": next_col}
+                        print(f"Created header '{header_name}' at column {next_col}")
+                        next_col += 1
+                
+                # Copy action data to both target columns
+                for target_name, target_info in target_columns.items():
+                    target_col = target_info["col"]
+                    target_start_row = target_info["row"] + 1
+                    
+                    for idx, source_cell in enumerate(action_data):
+                        dest_cell = dest_ws.cell(
+                            row=target_start_row + idx,
+                            column=target_col
+                        )
+                        
+                        # Copy cell value
+                        dest_cell.value = source_cell.value
+                        print(f"Copied '{source_cell.value}' to {target_name} column at row {target_start_row + idx}")
+                        
+                        # Copy cell formatting
+                        if source_cell.has_style:
+                            dest_cell.font = copy(source_cell.font)
+                            dest_cell.border = copy(source_cell.border)
+                            dest_cell.fill = copy(source_cell.fill)
+                            dest_cell.number_format = source_cell.number_format
+                            dest_cell.protection = copy(source_cell.protection)
+                            dest_cell.alignment = copy(source_cell.alignment)
+                    
+                    # Merge consecutive cells with same value for this column too
+                    current_value = None
+                    merge_start_row = None
+                    
+                    for idx in range(len(action_data)):
+                        row_num = target_start_row + idx
+                        cell = dest_ws.cell(row=row_num, column=target_col)
+                        cell_value = str(cell.value).strip() if cell.value else ""
+                        
+                        if cell_value == current_value:
+                            continue
+                        else:
+                            # End previous merge group if it exists
+                            if merge_start_row is not None and merge_start_row < row_num - 1:
+                                try:
+                                    dest_ws.merge_cells(
+                                        start_row=merge_start_row,
+                                        start_column=target_col,
+                                        end_row=row_num - 1,
+                                        end_column=target_col
+                                    )
+                                    print(f"Merged {target_name} cells from row {merge_start_row} to {row_num - 1}")
+                                except Exception as e:
+                                    print(f"Warning: Could not merge {target_name} cells: {e}")
+                            
+                            current_value = cell_value
+                            merge_start_row = row_num
+                    
+                    # Handle the last merge group
+                    if merge_start_row is not None and merge_start_row < target_start_row + len(action_data) - 1:
+                        try:
+                            dest_ws.merge_cells(
+                                start_row=merge_start_row,
+                                start_column=target_col,
+                                end_row=target_start_row + len(action_data) - 1,
+                                end_column=target_col
+                            )
+                            print(f"Merged final {target_name} cells from row {merge_start_row} to {target_start_row + len(action_data) - 1}")
+                        except Exception as e:
+                            print(f"Warning: Could not merge final {target_name} cells: {e}")
+            else:
+                print("No data found in アクション column")
+        else:
+            print("アクション column not found")
+
+        # Also copy data from "処理条件" column to "処理条件①" column
+        if progress_callback:
+            progress_callback("Đang tìm cột 処理条件...")
+        
+        # Find the "処理条件" header cell in source
+        condition_header_cell = None
+        condition_header_row = None
+        condition_header_col = None
+        
+        for row in range(1, source_ws.max_row + 1):
+            for col in range(1, source_ws.max_column + 1):
+                cell = source_ws.cell(row=row, column=col)
+                if cell.value:
+                    cell_text = str(cell.value).strip()
+                    if cell_text == "処理条件":
+                        condition_header_cell = cell
+                        condition_header_row = row
+                        condition_header_col = col
+                        print(f"Condition header found at row {condition_header_row}, column {condition_header_col}")
+                        break
+            if condition_header_cell:
+                break
+        
+        if condition_header_cell:
+            # Get data from 処理条件 column
+            condition_data = []
+            for row in range(condition_header_row + 1, source_ws.max_row + 1):
+                cell = source_ws.cell(row=row, column=condition_header_col)
+                if cell.value is not None:
+                    print(f"Found condition data at row {row}: '{cell.value}'")
+                    condition_data.append(cell)
+            
+            if condition_data:
+                if progress_callback:
+                    progress_callback("Đang copy dữ liệu 処理条件 sang 処理条件①...")
+                
+                # Find or create 処理条件① column in destination
+                target_condition_col = None
+                target_condition_row = None
+                
+                for row in range(1, dest_ws.max_row + 1):
+                    for col in range(1, dest_ws.max_column + 1):
+                        cell = dest_ws.cell(row=row, column=col)
+                        if cell.value:
+                            cell_text = str(cell.value).strip()
+                            if cell_text == "処理条件①":
+                                target_condition_col = col
+                                target_condition_row = row
+                                print(f"Found target column '処理条件①' at row {row}, column {col}")
+                                break
+                    if target_condition_col:
+                        break
+                
+                # Create header if it doesn't exist
+                if target_condition_col is None:
+                    target_condition_col = dest_ws.max_column + 1
+                    target_condition_row = 1
+                    dest_ws.cell(row=target_condition_row, column=target_condition_col, value="処理条件①")
+                    print(f"Created header '処理条件①' at column {target_condition_col}")
+                
+                # Copy condition data to target column
+                target_start_row = target_condition_row + 1
+                
+                for idx, source_cell in enumerate(condition_data):
+                    dest_cell = dest_ws.cell(
+                        row=target_start_row + idx,
+                        column=target_condition_col
+                    )
+                    
+                    # Copy cell value
+                    dest_cell.value = source_cell.value
+                    print(f"Copied '{source_cell.value}' to 処理条件① column at row {target_start_row + idx}")
+                    
+                    # Copy cell formatting
+                    if source_cell.has_style:
+                        dest_cell.font = copy(source_cell.font)
+                        dest_cell.border = copy(source_cell.border)
+                        dest_cell.fill = copy(source_cell.fill)
+                        dest_cell.number_format = source_cell.number_format
+                        dest_cell.protection = copy(source_cell.protection)
+                        dest_cell.alignment = copy(source_cell.alignment)
+            else:
+                print("No data found in 処理条件 column")
+        else:
+            print("処理条件 column not found")
+
+        # Also copy data from "API URL" column to "WEBAPI" column
+        if progress_callback:
+            progress_callback("Đang tìm cột API URL...")
+        
+        # Find the "API URL" header cell in source
+        api_header_cell = None
+        api_header_row = None
+        api_header_col = None
+        
+        for row in range(1, source_ws.max_row + 1):
+            for col in range(1, source_ws.max_column + 1):
+                cell = source_ws.cell(row=row, column=col)
+                if cell.value:
+                    cell_text = str(cell.value).strip()
+                    if cell_text == "API URL":
+                        api_header_cell = cell
+                        api_header_row = row
+                        api_header_col = col
+                        print(f"API URL header found at row {api_header_row}, column {api_header_col}")
+                        break
+            if api_header_cell:
+                break
+        
+        if api_header_cell:
+            # Get data from API URL column
+            api_data = []
+            for row in range(api_header_row + 1, source_ws.max_row + 1):
+                cell = source_ws.cell(row=row, column=api_header_col)
+                if cell.value is not None:
+                    print(f"Found API URL data at row {row}: '{cell.value}'")
+                    api_data.append(cell)
+            
+            if api_data:
+                if progress_callback:
+                    progress_callback("Đang copy dữ liệu API URL sang WEBAPI...")
+                
+                # Find or create WEBAPI column in destination
+                target_webapi_col = None
+                target_webapi_row = None
+                
+                for row in range(1, dest_ws.max_row + 1):
+                    for col in range(1, dest_ws.max_column + 1):
+                        cell = dest_ws.cell(row=row, column=col)
+                        if cell.value:
+                            cell_text = str(cell.value).strip()
+                            if cell_text == "WEBAPI":
+                                target_webapi_col = col
+                                target_webapi_row = row
+                                print(f"Found target column 'WEBAPI' at row {row}, column {col}")
+                                break
+                    if target_webapi_col:
+                        break
+                
+                # Create header if it doesn't exist
+                if target_webapi_col is None:
+                    target_webapi_col = dest_ws.max_column + 1
+                    target_webapi_row = 1
+                    dest_ws.cell(row=target_webapi_row, column=target_webapi_col, value="WEBAPI")
+                    print(f"Created header 'WEBAPI' at column {target_webapi_col}")
+                
+                # Copy API data to WEBAPI column (without merging consecutive cells)
+                target_start_row = target_webapi_row + 1
+                
+                for idx, source_cell in enumerate(api_data):
+                    dest_cell = dest_ws.cell(
+                        row=target_start_row + idx,
+                        column=target_webapi_col
+                    )
+                    
+                    # Copy cell value
+                    dest_cell.value = source_cell.value
+                    print(f"Copied '{source_cell.value}' to WEBAPI column at row {target_start_row + idx}")
+                    
+                    # Copy cell formatting
+                    if source_cell.has_style:
+                        dest_cell.font = copy(source_cell.font)
+                        dest_cell.border = copy(source_cell.border)
+                        dest_cell.fill = copy(source_cell.fill)
+                        dest_cell.number_format = source_cell.number_format
+                        dest_cell.protection = copy(source_cell.protection)
+                        dest_cell.alignment = copy(source_cell.alignment)
+            else:
+                print("No data found in API URL column")
+        else:
+            print("API URL column not found")
+
+        # Also copy data from column containing "処理No." to "No." column
+        if progress_callback:
+            progress_callback("Đang tìm cột chứa 処理No....")
+        
+        # Find the column containing "処理No." header cell in source
+        shori_no_header_cell = None
+        shori_no_header_row = None
+        shori_no_header_col = None
+        
+        for row in range(1, source_ws.max_row + 1):
+            for col in range(1, source_ws.max_column + 1):
+                cell = source_ws.cell(row=row, column=col)
+                if cell.value:
+                    cell_text = str(cell.value).strip()
+                    if "処理No." in cell_text:  # Contains "処理No." rather than exact match
+                        shori_no_header_cell = cell
+                        shori_no_header_row = row
+                        shori_no_header_col = col
+                        print(f"Column containing '処理No.' found at row {shori_no_header_row}, column {shori_no_header_col}: '{cell_text}'")
+                        break
+            if shori_no_header_cell:
+                break
+        
+        if shori_no_header_cell:
+            # Get data from 処理No. column
+            shori_no_data = []
+            for row in range(shori_no_header_row + 1, source_ws.max_row + 1):
+                cell = source_ws.cell(row=row, column=shori_no_header_col)
+                if cell.value is not None:
+                    print(f"Found 処理No. data at row {row}: '{cell.value}'")
+                    shori_no_data.append(cell)
+            
+            if shori_no_data:
+                if progress_callback:
+                    progress_callback("Đang copy dữ liệu 処理No. sang No....")
+                
+                # Find or create No. column in destination
+                target_no_col = None
+                target_no_row = None
+                
+                for row in range(1, dest_ws.max_row + 1):
+                    for col in range(1, dest_ws.max_column + 1):
+                        cell = dest_ws.cell(row=row, column=col)
+                        if cell.value:
+                            cell_text = str(cell.value).strip()
+                            if cell_text == "No.":
+                                target_no_col = col
+                                target_no_row = row
+                                print(f"Found target column 'No.' at row {row}, column {col}")
+                                break
+                    if target_no_col:
+                        break
+                
+                # Create header if it doesn't exist
+                if target_no_col is None:
+                    target_no_col = dest_ws.max_column + 1
+                    target_no_row = 1
+                    dest_ws.cell(row=target_no_row, column=target_no_col, value="No.")
+                    print(f"Created header 'No.' at column {target_no_col}")
+                
+                # Copy 処理No. data to No. column (without merging consecutive cells)
+                target_start_row = target_no_row + 1
+                
+                for idx, source_cell in enumerate(shori_no_data):
+                    dest_cell = dest_ws.cell(
+                        row=target_start_row + idx,
+                        column=target_no_col
+                    )
+                    
+                    # Copy cell value
+                    dest_cell.value = source_cell.value
+                    print(f"Copied '{source_cell.value}' to No. column at row {target_start_row + idx}")
+                    
+                    # Copy cell formatting
+                    if source_cell.has_style:
+                        dest_cell.font = copy(source_cell.font)
+                        dest_cell.border = copy(source_cell.border)
+                        dest_cell.fill = copy(source_cell.fill)
+                        dest_cell.number_format = source_cell.number_format
+                        dest_cell.protection = copy(source_cell.protection)
+                        dest_cell.alignment = copy(source_cell.alignment)
+            else:
+                print("No data found in 処理No. column")
+        else:
+            print("Column containing '処理No.' not found")
+
+        # Copy combined data from "処理概要" and "入力パラメータ" columns to "想定結果" column
+        if progress_callback:
+            progress_callback("Đang tìm cột 処理概要 và 入力パラメータ...")
+        
+        # Find the "処理概要" and "入力パラメータ" header cells in source
+        shori_gaiyo_header_cell = None
+        shori_gaiyo_header_row = None
+        shori_gaiyo_header_col = None
+        
+        nyuryoku_param_header_cell = None
+        nyuryoku_param_header_row = None
+        nyuryoku_param_header_col = None
+        
+        # Find 処理概要 column
+        for row in range(1, source_ws.max_row + 1):
+            for col in range(1, source_ws.max_column + 1):
+                cell = source_ws.cell(row=row, column=col)
+                if cell.value:
+                    cell_text = str(cell.value).strip()
+                    if cell_text == "処理概要":
+                        shori_gaiyo_header_cell = cell
+                        shori_gaiyo_header_row = row
+                        shori_gaiyo_header_col = col
+                        print(f"処理概要 header found at row {shori_gaiyo_header_row}, column {shori_gaiyo_header_col}")
+                        break
+            if shori_gaiyo_header_cell:
+                break
+        
+        # Find 入力パラメータ column
+        for row in range(1, source_ws.max_row + 1):
+            for col in range(1, source_ws.max_column + 1):
+                cell = source_ws.cell(row=row, column=col)
+                if cell.value:
+                    cell_text = str(cell.value).strip()
+                    if cell_text == "入力パラメータ":
+                        nyuryoku_param_header_cell = cell
+                        nyuryoku_param_header_row = row
+                        nyuryoku_param_header_col = col
+                        print(f"入力パラメータ header found at row {nyuryoku_param_header_row}, column {nyuryoku_param_header_col}")
+                        break
+            if nyuryoku_param_header_cell:
+                break
+        
+        if shori_gaiyo_header_cell and nyuryoku_param_header_cell:
+            if progress_callback:
+                progress_callback("Đang kết hợp dữ liệu từ 2 cột...")
+            
+            # Get combined data from both columns
+            combined_data = []
+            max_data_row = max(source_ws.max_row, 
+                              shori_gaiyo_header_row if shori_gaiyo_header_cell else 0,
+                              nyuryoku_param_header_row if nyuryoku_param_header_cell else 0)
+            
+            # Determine the start row (take the maximum of both headers + 1)
+            start_row = max(shori_gaiyo_header_row + 1, nyuryoku_param_header_row + 1)
+            
+            for row in range(start_row, max_data_row + 1):
+                shori_gaiyo_cell = source_ws.cell(row=row, column=shori_gaiyo_header_col)
+                nyuryoku_param_cell = source_ws.cell(row=row, column=nyuryoku_param_header_col)
+                
+                # Get values from both cells
+                shori_gaiyo_value = str(shori_gaiyo_cell.value).strip() if shori_gaiyo_cell.value is not None else ""
+                nyuryoku_param_value = str(nyuryoku_param_cell.value).strip() if nyuryoku_param_cell.value is not None else ""
+                
+                # Skip if both values are empty
+                if not shori_gaiyo_value and not nyuryoku_param_value:
+                    continue
+                
+                # Combine values with newline separator
+                combined_value = f"{shori_gaiyo_value}\n{nyuryoku_param_value}" if shori_gaiyo_value and nyuryoku_param_value else (shori_gaiyo_value or nyuryoku_param_value)
+                
+                print(f"Combined data at row {row}: '{combined_value.replace(chr(10), '\\n')}'")
+                
+                # Store the combined data with source cell for formatting reference (use the first non-empty cell)
+                source_cell_for_format = shori_gaiyo_cell if shori_gaiyo_cell.value is not None else nyuryoku_param_cell
+                combined_data.append({
+                    'value': combined_value,
+                    'source_cell': source_cell_for_format,
+                    'row': row
+                })
+            
+            if combined_data:
+                if progress_callback:
+                    progress_callback("Đang copy dữ liệu kết hợp sang 想定結果...")
+                
+                # Find or create 想定結果 column in destination
+                target_soutei_col = None
+                target_soutei_row = None
+                
+                for row in range(1, dest_ws.max_row + 1):
+                    for col in range(1, dest_ws.max_column + 1):
+                        cell = dest_ws.cell(row=row, column=col)
+                        if cell.value:
+                            cell_text = str(cell.value).strip()
+                            if cell_text == "想定結果":
+                                target_soutei_col = col
+                                target_soutei_row = row
+                                print(f"Found target column '想定結果' at row {row}, column {col}")
+                                break
+                    if target_soutei_col:
+                        break
+                
+                # Create header if it doesn't exist
+                if target_soutei_col is None:
+                    target_soutei_col = dest_ws.max_column + 1
+                    target_soutei_row = 1
+                    dest_ws.cell(row=target_soutei_row, column=target_soutei_col, value="想定結果")
+                    print(f"Created header '想定結果' at column {target_soutei_col}")
+                
+                # Copy combined data to 想定結果 column
+                target_start_row = target_soutei_row + 1
+                
+                for idx, data_item in enumerate(combined_data):
+                    dest_cell = dest_ws.cell(
+                        row=target_start_row + idx,
+                        column=target_soutei_col
+                    )
+                    
+                    # Copy combined value
+                    dest_cell.value = data_item['value']
+                    print(f"Copied combined value to 想定結果 column at row {target_start_row + idx}")
+                    
+                    # Copy cell formatting from source
+                    source_cell = data_item['source_cell']
+                    if source_cell.has_style:
+                        dest_cell.font = copy(source_cell.font)
+                        dest_cell.border = copy(source_cell.border)
+                        dest_cell.fill = copy(source_cell.fill)
+                        dest_cell.number_format = source_cell.number_format
+                        dest_cell.protection = copy(source_cell.protection)
+                        dest_cell.alignment = copy(source_cell.alignment)
+            else:
+                print("No data found in 処理概要 and 入力パラメータ columns")
+        else:
+            if not shori_gaiyo_header_cell:
+                print("処理概要 column not found")
+            if not nyuryoku_param_header_cell:
+                print("入力パラメータ column not found")
+
+        # Fill existing additional condition columns (処理条件② through 処理条件⑥) with "-"
+        if progress_callback:
+            progress_callback("Đang điền dữ liệu vào các cột 処理条件② đến 処理条件⑥...")
+        
+        # List of additional condition columns to fill
+        additional_condition_columns = ["処理条件②", "処理条件③", "処理条件④", "処理条件⑤", "処理条件⑥"]
+        columns_filled = []
+        
+        # Determine the row count based on 処理条件① column
+        condition_row_count = 0
+        if 'condition_data' in locals() and condition_data:
+            condition_row_count = len(condition_data)
+            print(f"Using row count from 処理条件①: {condition_row_count}")
+        else:
+            # If no 処理条件① data, use the same count as アクションNo. data
+            condition_row_count = len(data_to_copy)
+            print(f"Using row count from アクションNo.: {condition_row_count}")
+        
+        if condition_row_count > 0:
+            # Create thin border for these columns
+            thin_border = Side(style='thin', color='000000')
+            cell_border = Border(
+                top=thin_border,
+                bottom=thin_border,
+                left=thin_border,
+                right=thin_border
+            )
+            
+            for col_name in additional_condition_columns:
+                # Find existing column (don't create new ones)
+                target_col = None
+                target_row = None
+                
+                # Search for existing column
+                for row in range(1, dest_ws.max_row + 1):
+                    for col in range(1, dest_ws.max_column + 1):
+                        cell = dest_ws.cell(row=row, column=col)
+                        if cell.value and str(cell.value).strip() == col_name:
+                            target_col = col
+                            target_row = row
+                            print(f"Found existing column '{col_name}' at row {row}, column {col}")
+                            break
+                    if target_col:
+                        break
+                
+                # Only fill if column exists
+                if target_col is not None:
+                    # Fill the column with "-" values and apply borders
+                    start_data_row = target_row + 1
+                    for i in range(condition_row_count):
+                        cell_row = start_data_row + i
+                        cell = dest_ws.cell(row=cell_row, column=target_col)
+                        
+                        # Set value to "-"
+                        cell.value = "-"
+                        
+                        # Apply border
+                        cell.border = cell_border
+                        
+                        print(f"Set '{col_name}' cell at row {cell_row} to '-' with border")
+                    
+                    columns_filled.append(col_name)
+                else:
+                    print(f"Column '{col_name}' not found in unit test file")
+        else:
+            print("No data found to determine row count for additional condition columns")
+
+        # Add borders to existing columns 実施者, 実施日, 結果 (without filling data)
+        if progress_callback:
+            progress_callback("Đang thêm border cho các cột 実施者, 実施日, 結果...")
+        
+        # List of columns to add borders to (without data)
+        border_only_columns = ["実施者", "実施日", "結果"]
+        columns_bordered = []
+        
+        # Use the same row count as previous operations
+        border_row_count = 0
+        if 'condition_data' in locals() and condition_data:
+            border_row_count = len(condition_data)
+            print(f"Using row count from 処理条件①: {border_row_count}")
+        else:
+            # If no 処理条件① data, use the same count as アクションNo. data
+            border_row_count = len(data_to_copy)
+            print(f"Using row count from アクションNo.: {border_row_count}")
+        
+        if border_row_count > 0:
+            # Create thin border for these columns
+            thin_border = Side(style='thin', color='000000')
+            cell_border = Border(
+                top=thin_border,
+                bottom=thin_border,
+                left=thin_border,
+                right=thin_border
+            )
+            
+            for col_name in border_only_columns:
+                # Find existing column (don't create new ones)
+                target_col = None
+                target_row = None
+                
+                # Search for existing column
+                for row in range(1, dest_ws.max_row + 1):
+                    for col in range(1, dest_ws.max_column + 1):
+                        cell = dest_ws.cell(row=row, column=col)
+                        if cell.value and str(cell.value).strip() == col_name:
+                            target_col = col
+                            target_row = row
+                            print(f"Found existing column '{col_name}' at row {row}, column {col}")
+                            break
+                    if target_col:
+                        break
+                
+                # Only add borders if column exists
+                if target_col is not None:
+                    # Add borders to the column cells (without filling data)
+                    start_data_row = target_row + 1
+                    for i in range(border_row_count):
+                        cell_row = start_data_row + i
+                        cell = dest_ws.cell(row=cell_row, column=target_col)
+                        
+                        # Apply border only (don't change the value)
+                        cell.border = cell_border
+                        
+                        print(f"Added border to '{col_name}' cell at row {cell_row}")
+                    
+                    columns_bordered.append(col_name)
+                else:
+                    print(f"Column '{col_name}' not found in unit test file")
+        else:
+            print("No data found to determine row count for border-only columns")
+
+        if progress_callback:
+            progress_callback("Đang lưu file...")
+        
+        # Save the destination file
+        dest_wb.save(doc_file_path)
+        
+        # Close workbooks
+        source_wb.close()
+        dest_wb.close()
+        
+        result = {
+            "test_file": os.path.basename(test_file_path),
+            "doc_file": os.path.basename(doc_file_path),
+            "sheet_name": sheet_name,
+            "header_found_at": f"Row {header_row}, Col {header_col}",
+            "data_copied": len(data_to_copy),
+            "paste_location": f"Row {paste_start_row}, Col {dest_header_col}",
+            "dest_header_created": dest_header_cell is None,
+            "action_column_found": action_header_cell is not None,
+            "action_data_copied": len(action_data) if 'action_data' in locals() and action_data else 0,
+            "target_columns_created": "項目, 操作" if action_header_cell else "None",
+            "condition_column_found": condition_header_cell is not None,
+            "condition_data_copied": len(condition_data) if 'condition_data' in locals() and condition_data else 0,
+            "condition_target_created": "処理条件①" if condition_header_cell else "None",
+            "api_column_found": api_header_cell is not None,
+            "api_data_copied": len(api_data) if 'api_data' in locals() and api_data else 0,
+            "webapi_target_created": "WEBAPI" if api_header_cell else "None",
+            "shori_no_column_found": shori_no_header_cell is not None,
+            "shori_no_data_copied": len(shori_no_data) if 'shori_no_data' in locals() and shori_no_data else 0,
+            "no_target_created": "No." if shori_no_header_cell else "None",
+            "combined_columns_found": shori_gaiyo_header_cell is not None and nyuryoku_param_header_cell is not None,
+            "combined_data_copied": len(combined_data) if 'combined_data' in locals() and combined_data else 0,
+            "soutei_target_created": "想定結果" if 'shori_gaiyo_header_cell' in locals() and shori_gaiyo_header_cell and 'nyuryoku_param_header_cell' in locals() and nyuryoku_param_header_cell else "None",
+            "additional_condition_columns_filled": columns_filled,
+            "border_only_columns_processed": columns_bordered,
+            "status": "success"
+        }
+        
+        if progress_callback:
+            progress_callback("Hoàn thành!")
+        
+        return result
+        
+    except Exception as e:
+        if progress_callback:
+            progress_callback(f"Lỗi: {str(e)}")
+        raise e
+
+
 def validate_file_compatibility(test_file_path, doc_file_path):
     """
     Check if the uploaded files are compatible for data copying
@@ -488,6 +1402,103 @@ def get_copy_preview(test_file_path, doc_file_path):
         """
         
         return preview.strip()
+        
+    except Exception as e:
+        return f"Lỗi tạo preview: {str(e)}" 
+
+
+def get_action_copy_preview(test_file_path, doc_file_path):
+    """
+    Generate a preview of what will be copied for action data
+    
+    Args:
+        test_file_path (str): Path to mock documentation file  
+        doc_file_path (str): Path to unit test file
+        
+    Returns:
+        str: Preview text of the copy operation
+    """
+    try:
+        test_name = os.path.basename(test_file_path)
+        doc_name = os.path.basename(doc_file_path)
+        
+        # Try to get information about the source sheet
+        preview_info = ""
+        try:
+            source_wb = load_workbook(test_file_path, data_only=True)
+            sheet_name = "アクション一覧"
+            
+            if sheet_name in source_wb.sheetnames:
+                source_ws = source_wb[sheet_name]
+                
+                # Find the "アクションNo." header cell
+                header_found = False
+                header_row = None
+                header_col = None
+                data_count = 0
+                
+                for row in range(1, source_ws.max_row + 1):
+                    for col in range(1, source_ws.max_column + 1):
+                        cell = source_ws.cell(row=row, column=col)
+                        if cell.value and str(cell.value).strip() == "アクションNo.":
+                            header_found = True
+                            header_row = row
+                            header_col = col
+                            
+                            # Count data below header
+                            for data_row in range(header_row + 1, source_ws.max_row + 1):
+                                data_cell = source_ws.cell(row=data_row, column=header_col)
+                                if data_cell.value is not None:
+                                    data_count += 1
+                                else:
+                                    break
+                            break
+                    if header_found:
+                        break
+                
+                if header_found:
+                    preview_info = f"""
+📊 Thông tin sheet nguồn:
+• Sheet: {sheet_name}
+• Header "アクションNo." tìm thấy tại: Dòng {header_row}, Cột {header_col}
+• Số dữ liệu sẽ copy: {data_count} items
+• Dữ liệu sẽ được paste vào cột "アクションNo." của file đích
+                    """
+                else:
+                    preview_info = f"\n⚠️ Không tìm thấy cột 'アクションNo.' trong sheet {sheet_name}"
+                
+                source_wb.close()
+            else:
+                preview_info = f"\n⚠️ Không tìm thấy sheet '{sheet_name}' trong file mocks"
+                
+        except Exception as e:
+            preview_info = f"\n⚠️ Không thể đọc thông tin sheet: {str(e)}"
+        
+        preview = f"""
+📋 Thông tin sao chép dữ liệu Action:
+
+📁 File mocks (nguồn): {test_name}
+📄 File unit test (đích): {doc_name}
+
+🔄 Các thao tác sẽ thực hiện:
+• Tìm header "アクションNo." trong sheet "アクション一覧" của file mocks
+• Copy toàn bộ dữ liệu bên dưới header này (cùng cột)
+• Paste dữ liệu vào bên dưới header trong file unit test
+• Merge các cells liên tiếp có cùng giá trị cho cột "アクションNo."
+• Tìm cột "アクション" và copy dữ liệu sang 2 cột "項目" và "操作" (có merge)
+• Tìm cột "処理条件" và copy dữ liệu sang cột "処理条件①" (không merge)
+• Tìm cột "API URL" và copy dữ liệu sang cột "WEBAPI" (không merge)
+• Tìm cột chứa "処理No." và copy dữ liệu sang cột "No." (không merge)
+• Kết hợp dữ liệu từ "処理概要" và "入力パラメータ" (ngăn cách xuống dòng) sang "想定結果"
+• Điền giá trị "-" và border vào các cột có sẵn "処理条件②" đến "処理条件⑥"
+• Thêm border vào các cột có sẵn "実施者", "実施日", "結果" (không điền dữ liệu)
+• Copy cả formatting (colors, fonts, borders)
+• Nếu không tìm thấy header trong file đích, sẽ tạo mới tại A1{preview_info}
+
+⚡ Trạng thái: Sẵn sàng để thực hiện
+        """
+        
+        return preview.strip() 
         
     except Exception as e:
         return f"Lỗi tạo preview: {str(e)}" 
