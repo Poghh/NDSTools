@@ -10,6 +10,7 @@ from watchdog.observers import Observer
 from toolsUI.beTab.ui_be import BackEndTab
 from toolsUI.feTab.ui_fe_new_version import FrontEndTab
 from toolsUI.utTab.ui_ut import UnitTestTab
+from toolsUI.eslintAllTab.ui_eslint_all import EslintAllTab
 
 if "--watch" in sys.argv:
 
@@ -58,14 +59,17 @@ else:
             self.tab_parent = ttk.Notebook(self.root)
             self.tab_parent.pack(fill="both", expand=True)
 
-            # Tab Unit Test
-            self.ut_tab = UnitTestTab(self.tab_parent)
-            
             # Tab FE
             self.fe_tab = FrontEndTab(self.tab_parent)
 
             # Tab BE
             self.be_tab = BackEndTab(self.tab_parent)
+
+            # Tab Unit Test
+            self.ut_tab = UnitTestTab(self.tab_parent)
+
+            # Tab Check Eslint All
+            self.eslint_all_tab = EslintAllTab(self.tab_parent)
 
 
     if __name__ == "__main__":
