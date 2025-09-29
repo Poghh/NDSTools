@@ -3,6 +3,8 @@ import subprocess
 import threading
 import tkinter as tk
 from tkinter import filedialog, scrolledtext, ttk
+from concurrent.futures import ThreadPoolExecutor, as_completed
+from threading import Lock
 
 import pandas as pd
 from tkinterdnd2 import DND_FILES
@@ -20,6 +22,7 @@ class EslintAllTab:
         self.folder_path = ""
         self.valid_file_paths = []  # Store valid file paths from selfcheck
         self.file_to_screen_map = {}  # Map file paths to screen names
+        self.eslint_lock = Lock()  # Lock for thread-safe UI updates
         
         self.init_ui()
 
@@ -700,89 +703,105 @@ class EslintAllTab:
         threading.Thread(target=self._check_eslint_thread).start()
 
     def _check_eslint_thread(self):
-        """Thread function for ESLint check"""
+        """Thread function for ESLint check using multithreading"""
         try:
             self.display_eslint_output("🚀 Bắt đầu kiểm tra ESLint cho các file hợp lệ...\n", "info")
             
-            # Group files by screen name
-            screen_to_files = {}
+            # Prepare file list with screen mapping
+            file_tasks = []
+            seen_files = set()
+            
             for file_path in self.valid_file_paths:
-                screen_name = self.file_to_screen_map.get(file_path, "Unknown")
-                if screen_name not in screen_to_files:
-                    screen_to_files[screen_name] = []
-                screen_to_files[screen_name].append(file_path)
+                if file_path not in seen_files:
+                    seen_files.add(file_path)
+                    screen_name = self.file_to_screen_map.get(file_path, "Unknown")
+                    file_tasks.append((file_path, screen_name))
             
-            # Remove duplicates from each screen's file list
-            for screen_name in screen_to_files:
-                unique_files = []
-                seen = set()
-                for file_path in screen_to_files[screen_name]:
-                    if file_path not in seen:
-                        seen.add(file_path)
-                        unique_files.append(file_path)
-                screen_to_files[screen_name] = unique_files
+            total_files = len(file_tasks)
+            self.display_eslint_output(f"📁 Tìm thấy {total_files} file JS/TS/Vue từ Selfcheck để kiểm tra", "info")
             
-            total_files = sum(len(files) for files in screen_to_files.values())
-            self.display_eslint_output(f"📁 Tìm thấy {total_files} file JS/TS/Vue từ Selfcheck để kiểm tra\n", "info")
+            # Auto-detect optimal number of workers based on system specs
+            max_workers = self._get_optimal_workers()
+            self.display_eslint_output(f"⏳ Đang chạy ESLint song song ({max_workers} luồng)...\n", "info")
             
-            eslint_error_count = 0
-            
-            # Process files grouped by screen
-            for screen_name in sorted(screen_to_files.keys()):
-                file_list = screen_to_files[screen_name]
-                if not file_list:
-                    continue
-                    
-                # Display screen name header
-                self.display_eslint_output(f"{screen_name}:", "info")
+            # Run ESLint in parallel using ThreadPoolExecutor
+            results = []
+            completed_count = 0
+            with ThreadPoolExecutor(max_workers=max_workers) as executor:
+                # Submit all tasks
+                future_to_task = {
+                    executor.submit(self._run_eslint_single_file, file_path, screen_name): (file_path, screen_name)
+                    for file_path, screen_name in file_tasks
+                }
                 
-                for file_path in file_list:
-                    relative_path = os.path.relpath(file_path, self.folder_path)
-                    # Clean up the path to start from meaningful directories like 'client_cmn'
-                    display_path = self._clean_display_path(relative_path)
-                    self.display_eslint_output(f"🔧 ESLint: {display_path}", "info")
+                # Collect results as they complete
+                for future in as_completed(future_to_task):
+                    completed_count += 1
+                    result = future.result()
+                    results.append(result)
                     
-                    try:
-                        result = subprocess.run(
-                            ["npx", "eslint", "--no-warn-ignored", file_path],
-                            capture_output=True,
-                            text=True,
-                            encoding="utf-8",
-                            shell=True,
-                            cwd=os.getcwd(),
-                        )
-                        
-                        if result.stdout.strip():
-                            self.display_eslint_output(result.stdout.strip(), "warning")
-                        
-                        if result.stderr.strip():
-                            self.display_eslint_output(result.stderr.strip(), "error")
-                        
-                        if result.returncode != 0:
-                            self.display_eslint_output(f"❌ ESLint lỗi ở: {display_path}", "error")
-                            eslint_error_count += 1
-                        else:
-                            self.display_eslint_output(f"✅ ESLint OK: {display_path}", "success")
-                            
-                    except Exception as e:
-                        self.display_eslint_output(f"❌ Lỗi khi chạy ESLint cho {display_path}: {str(e)}", "error")
-                        eslint_error_count += 1
+                    # Update progress
+                    with self.eslint_lock:
+                        self.display_eslint_output(f"⏳ Hoàn thành: {completed_count}/{total_files} file", "info")
+            
+            # Group results by screen and display errors only
+            screen_errors = {}
+            total_error_files = 0
+            
+            for result in results:
+                screen_name = result['screen_name']
+                if not result['success']:
+                    if screen_name not in screen_errors:
+                        screen_errors[screen_name] = []
                     
-                    # Add separator between files within same screen
-                    self.display_eslint_output("", "info")
-                
-                # Add extra separator between different screens
+                    error_info = {
+                        'display_path': result['display_path'],
+                        'stdout': result['stdout'],
+                        'stderr': result['stderr'],
+                        'exception': result.get('exception', False)
+                    }
+                    screen_errors[screen_name].append(error_info)
+                    total_error_files += 1
+            
+            # Display results
+            self.display_eslint_output("\n" + "=" * 60, "info")
+            
+            if not screen_errors:
+                self.display_eslint_output("✅ TẤT CẢ FILE ĐỀU PASS ESLINT!", "success")
+            else:
+                self.display_eslint_output("❌ CÁC MÀN HÌNH CÓ LỖI ESLINT:", "error")
                 self.display_eslint_output("", "info")
+                
+                for screen_name in sorted(screen_errors.keys()):
+                    error_list = screen_errors[screen_name]
+                    self.display_eslint_output(f"Màn hình {screen_name}:", "error")
+                    
+                    for error in error_list:
+                        if error.get('exception'):
+                            self.display_eslint_output(f"  - Lỗi chạy ESLint ở {error['display_path']}: {error['stderr']}", "error")
+                        else:
+                            self.display_eslint_output(f"  - Lỗi ESLint ở {error['display_path']}:", "error")
+                            if error['stdout']:
+                                # Indent the ESLint output for better readability
+                                indented_output = '\n'.join(f"    {line}" for line in error['stdout'].split('\n') if line.strip())
+                                self.display_eslint_output(indented_output, "warning")
+                            if error['stderr']:
+                                indented_error = '\n'.join(f"    {line}" for line in error['stderr'].split('\n') if line.strip())
+                                self.display_eslint_output(indented_error, "error")
+                    
+                    self.display_eslint_output("", "info")
             
-            # ESLint summary
-            self.display_eslint_output("=" * 60, "info")
+            # Summary
             self.display_eslint_output("📊 TỔNG HỢP ESLINT:", "info")
             self.display_eslint_output(f"📋 Tổng số file kiểm tra: {total_files}", "info")
             
-            if eslint_error_count == 0:
-                self.display_eslint_output(f"✅ File có lỗi ESLint: {eslint_error_count}", "success")
+            if total_error_files == 0:
+                self.display_eslint_output(f"✅ File có lỗi ESLint: {total_error_files}", "success")
             else:
-                self.display_eslint_output(f"❌ File có lỗi ESLint: {eslint_error_count}", "error")
+                self.display_eslint_output(f"❌ File có lỗi ESLint: {total_error_files}", "error")
+            
+            success_files = total_files - total_error_files
+            self.display_eslint_output(f"✅ File pass ESLint: {success_files}", "success")
             
             self.display_eslint_output("=" * 60, "info")
             self.display_eslint_output("✅ Hoàn thành kiểm tra ESLint", "success")
@@ -815,6 +834,64 @@ class EslintAllTab:
             normalized_path = normalized_path[3:]
         
         return normalized_path.replace('/', '\\')
+
+    def _get_optimal_workers(self):
+        """Calculate optimal number of worker threads based on system specs"""
+        import os
+        
+        try:
+            # Get CPU count
+            cpu_count = os.cpu_count() or 4
+            
+            # For ESLint (CPU + I/O intensive), use CPU cores * 2-3
+            # But with 32GB RAM, we can be more aggressive
+            optimal_workers = cpu_count * 3
+            
+            # Ensure minimum 8 workers for good parallelization
+            # Cap at 20 to reduce heat generation (reduced by 4 from 24)
+            optimal_workers = max(8, min(optimal_workers, 20))
+            
+            return optimal_workers
+            
+        except Exception:
+            return 12
+
+    def _run_eslint_single_file(self, file_path, screen_name):
+        """Run ESLint on a single file and return result"""
+        try:
+            relative_path = os.path.relpath(file_path, self.folder_path)
+            display_path = self._clean_display_path(relative_path)
+            
+            result = subprocess.run(
+                ["npx", "eslint", "--no-warn-ignored", file_path],
+                capture_output=True,
+                text=True,
+                encoding="utf-8",
+                shell=True,
+                cwd=os.getcwd(),
+            )
+            
+            return {
+                'file_path': file_path,
+                'display_path': display_path,
+                'screen_name': screen_name,
+                'return_code': result.returncode,
+                'stdout': result.stdout.strip(),
+                'stderr': result.stderr.strip(),
+                'success': result.returncode == 0
+            }
+            
+        except Exception as e:
+            return {
+                'file_path': file_path,
+                'display_path': self._clean_display_path(os.path.relpath(file_path, self.folder_path)),
+                'screen_name': screen_name,
+                'return_code': -1,
+                'stdout': '',
+                'stderr': str(e),
+                'success': False,
+                'exception': True
+            }
 
     def display_selfcheck_output(self, text, tag=None):
         """Display text in selfcheck output area"""
