@@ -11,6 +11,7 @@ from toolsUI.beTab.ui_be import BackEndTab
 from toolsUI.feTab.ui_fe_new_version import FrontEndTab
 from toolsUI.utTab.ui_ut import UnitTestTab
 from toolsUI.eslintAllTab.ui_eslint_all import EslintAllTab
+from toolsUI.formatExcelTab.ui_format_excel import FormatExcelTab
 
 if "--watch" in sys.argv:
 
@@ -70,6 +71,9 @@ else:
 
             # Tab Check Eslint All
             self.eslint_all_tab = EslintAllTab(self.tab_parent)
+
+            # Tab Format Excel
+            self.format_excel_tab = FormatExcelTab(self.tab_parent)
 
 
     if __name__ == "__main__":
