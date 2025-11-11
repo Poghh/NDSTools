@@ -19,7 +19,7 @@ def check_hardcode_jp(self):
         if not (file_path.endswith(".vue") and base_name.startswith("Or")):
             continue
         if not os.path.exists(file_path):
-            self.output_text.insert(tk.END, f"❌ Không tìm thấy file: {file_path}\n", "error")
+            self.output_text.insert(tk.END, f" Không tìm thấy file: {file_path}\n", "error")
             continue
 
         with open(file_path, encoding="utf-8") as f:
@@ -44,7 +44,7 @@ def check_hardcode_jp(self):
 
     if not results:
         self.output_text.insert(
-            tk.END, "✅ Không phát hiện hardcode tiếng Nhật ngoài comment.\n", "success"
+            tk.END, " Không phát hiện hardcode tiếng Nhật ngoài comment.\n", "success"
         )
     else:
         grouped = {}
@@ -60,5 +60,5 @@ def check_hardcode_jp(self):
                 )
                 self.output_text.insert(tk.END, "".join(snippet) + "\n")
 
-    self.output_text.insert(tk.END, "\n✅ Kiểm tra hardcode JP hoàn tất.\n")
+    self.output_text.insert(tk.END, "\n Kiểm tra hardcode JP hoàn tất.\n")
     self.set_running_state(False)

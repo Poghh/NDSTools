@@ -71,7 +71,7 @@ def check_duplicate_css(file_path: str) -> list[str]:
         with open(file_path, encoding="utf-8") as f:
             content = f.read()
     except Exception as e:
-        return [f"❌ Error reading file {os.path.basename(file_path)}: {str(e)}"]
+        return [f" Error reading file {os.path.basename(file_path)}: {str(e)}"]
 
     # Extract style content from Vue file
     style_content = extract_style_content(content)
@@ -93,14 +93,14 @@ def check_duplicate_css(file_path: str) -> list[str]:
         # Resolve actual path of imported file
         scss_path = resolve_scss_path(file_path, import_path)
         if not scss_path:
-            results.append(f"⚠️ Could not resolve import path: {import_path}")
+            results.append(f" Could not resolve import path: {import_path}")
             continue
 
         try:
             with open(scss_path, encoding="utf-8") as f:
                 scss_content = f.read()
         except Exception as e:
-            results.append(f"❌ Error reading imported file {scss_path}: {str(e)}")
+            results.append(f" Error reading imported file {scss_path}: {str(e)}")
             continue
 
         # Get CSS classes defined in imported file
@@ -110,7 +110,7 @@ def check_duplicate_css(file_path: str) -> list[str]:
         duplicates = vue_classes.intersection(scss_classes)
         if duplicates:
             results.append(
-                f"⚠️ Found duplicate classes in {os.path.basename(file_path)} that are already defined in {os.path.basename(scss_path)}:"
+                f" Found duplicate classes in {os.path.basename(file_path)} that are already defined in {os.path.basename(scss_path)}:"
             )
             for cls in sorted(duplicates):
                 results.append(f"   • .{cls}")
@@ -138,14 +138,14 @@ def check_duplicate_css_main(app):
                 if results:
                     found_issues = True
                     app.output_text.insert(
-                        tk.END, f"\n🔍 {os.path.basename(file_path)}:\n", "highlight"
+                        tk.END, f"\n {os.path.basename(file_path)}:\n", "highlight"
                     )
                     for result in results:
-                        tag = "error" if "❌" in result else ("warning" if "⚠️" in result else None)
+                        tag = "error" if "" in result else ("warning" if "" in result else None)
                         app.output_text.insert(tk.END, f"{result}\n", tag)
 
         if not found_issues:
-            app.output_text.insert(tk.END, "✅ No duplicate CSS classes found\n", "success")
+            app.output_text.insert(tk.END, " No duplicate CSS classes found\n", "success")
 
     finally:
         app.set_running_state(False)

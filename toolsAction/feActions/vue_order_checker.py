@@ -44,7 +44,7 @@ def find_sections(content: str) -> list[tuple[int, str, int]]:
 def check_vue_order(file_path: str) -> list[str]:
     """Check if the Vue component sections are in the correct order"""
     if not os.path.exists(file_path):
-        return [f"❌ File not found: {file_path}"]
+        return [f" File not found: {file_path}"]
 
     if not file_path.endswith(".vue"):
         return []  # Skip silently if not a Vue file
@@ -53,11 +53,11 @@ def check_vue_order(file_path: str) -> list[str]:
         with open(file_path, encoding="utf-8") as f:
             content = f.read()
     except Exception as e:
-        return [f"❌ Error reading file {file_path}: {str(e)}"]
+        return [f" Error reading file {file_path}: {str(e)}"]
 
     sections = find_sections(content)
     if not sections:
-        return [f"⚠️ No recognizable Vue sections found in {file_path}"]
+        return [f" No recognizable Vue sections found in {file_path}"]
 
     errors = []
     last_order = -1
@@ -67,14 +67,14 @@ def check_vue_order(file_path: str) -> list[str]:
     for line_num, section_name, order in sorted(sections, key=lambda x: x[0]):
         if order < last_order:
             errors.append(
-                f"❌ Line {line_num}: '{section_name}' should come before '{last_section}' (line {last_line})"
+                f" Line {line_num}: '{section_name}' should come before '{last_section}' (line {last_line})"
             )
         last_order = order
         last_line = line_num
         last_section = section_name
 
     if not errors:
-        return [f"✅ All sections are in correct order in {file_path}"]
+        return [f" All sections are in correct order in {file_path}"]
 
     return errors
 
@@ -93,10 +93,10 @@ def check_vue_order_main(app):
             results = check_vue_order(file_path)
             if results:  # Only show results if it's a Vue file
                 app.output_text.insert(
-                    tk.END, f"\n🔍 Checking {os.path.basename(file_path)}...\n", "highlight"
+                    tk.END, f"\n Checking {os.path.basename(file_path)}...\n", "highlight"
                 )
                 for result in results:
-                    tag = "error" if "❌" in result else ("warning" if "⚠️" in result else "success")
+                    tag = "error" if "" in result else ("warning" if "" in result else "success")
                     app.output_text.insert(tk.END, f"{result}\n", tag)
     finally:
         app.set_running_state(False)

@@ -14,7 +14,7 @@ class UnitTestTab:
     def __init__(self, tab_parent):
         # Create regular tkinter frame for tab
         self.tab = tk.Frame(tab_parent, bg="#f5f7fa")
-        tab_parent.add(self.tab, text="🧪 Unit Test")
+        tab_parent.add(self.tab, text=" Unit Test")
         
         # Store file paths for actions
         self.test_file_path = None
@@ -353,38 +353,38 @@ class UnitTestTab:
                 
                 # Show success message for action copy
                 success_msg = f"""
-✅ Sao chép dữ liệu Action hoàn tất!
+ Sao chép dữ liệu Action hoàn tất!
 
-📁 File mocks (nguồn): {result['test_file']}
-📄 File unit test (đích): {result['doc_file']}
+ File mocks (nguồn): {result['test_file']}
+ File unit test (đích): {result['doc_file']}
 📋 Sheet: {result['sheet_name']}
 📍 Header tìm thấy tại: {result['header_found_at']}
-📊 Dữ liệu đã copy: {result['data_copied']} items
-📥 Paste vào: {result['paste_location']}
+ Dữ liệu đã copy: {result['data_copied']} items
+ Paste vào: {result['paste_location']}
 🆕 Header tạo mới: {'Có' if result['dest_header_created'] else 'Không'}
 🎯 Cột アクション: {'Tìm thấy' if result['action_column_found'] else 'Không tìm thấy'}
 📋 Copy sang cột: {result['target_columns_created']}
-📊 Dữ liệu アクション: {result['action_data_copied']} items
-🔧 Cột 処理条件: {'Tìm thấy' if result['condition_column_found'] else 'Không tìm thấy'}
+ Dữ liệu アクション: {result['action_data_copied']} items
+ Cột 処理条件: {'Tìm thấy' if result['condition_column_found'] else 'Không tìm thấy'}
 📋 Copy sang: {result['condition_target_created']}
-📊 Dữ liệu 処理条件: {result['condition_data_copied']} items
-🌐 Cột API URL: {'Tìm thấy' if result['api_column_found'] else 'Không tìm thấy'}
+ Dữ liệu 処理条件: {result['condition_data_copied']} items
+ Cột API URL: {'Tìm thấy' if result['api_column_found'] else 'Không tìm thấy'}
 📋 Copy sang: {result['webapi_target_created']}
-📊 Dữ liệu API URL: {result['api_data_copied']} items
+ Dữ liệu API URL: {result['api_data_copied']} items
 🔢 Cột 処理No.: {'Tìm thấy' if result['shori_no_column_found'] else 'Không tìm thấy'}
 📋 Copy sang: {result['no_target_created']}
-📊 Dữ liệu 処理No.: {result['shori_no_data_copied']} items
-✂️ Dữ liệu đã format: {result['no_data_formatted']} items (chỉ giữ ký tự cuối)
+ Dữ liệu 処理No.: {result['shori_no_data_copied']} items
+ Dữ liệu đã format: {result['no_data_formatted']} items (chỉ giữ ký tự cuối)
 🔗 Cột kết hợp: {'Tìm thấy cả 2' if result['combined_columns_found'] else 'Không đủ cột'}
 📋 Copy sang: {result['soutei_target_created']}
-📊 Dữ liệu kết hợp: {result['combined_data_copied']} items
-📝 Cột đã điền: {', '.join(result['additional_condition_columns_filled'])}
+ Dữ liệu kết hợp: {result['combined_data_copied']} items
+ Cột đã điền: {', '.join(result['additional_condition_columns_filled'])}
 🔲 Cột border: {', '.join(result['border_only_columns_processed'])}
-🔄 Gộp hàng: {result['groups_processed']} nhóm đã gộp, {result['rows_deleted']} hàng đã xóa
+ Gộp hàng: {result['groups_processed']} nhóm đã gộp, {result['rows_deleted']} hàng đã xóa
 🔗 Merge ActionNo: {result['action_merges']} nhóm đã merge
 🔗 Merge 項目: {result['koumoku_merges']} nhóm đã merge
 🔗 Merge 操作: {result['sousa_merges']} nhóm đã merge
-✅ Trạng thái: {result['status']}
+ Trạng thái: {result['status']}
                 """
             else:
                 # Default to data copy (original functionality)
@@ -396,20 +396,20 @@ class UnitTestTab:
                 
                 # Show success message for data copy
                 success_msg = f"""
-✅ Sao chép dữ liệu hoàn tất!
+ Sao chép dữ liệu hoàn tất!
 
-📁 File mocks (nguồn): {result['test_file']}
-📄 File unit test (đích): {result['doc_file']}
+ File mocks (nguồn): {result['test_file']}
+ File unit test (đích): {result['doc_file']}
 📋 Sheet: {result['sheet_name']}
-📊 Dữ liệu đã copy: {result['rows_copied']} dòng × {result['cols_copied']} cột
+ Dữ liệu đã copy: {result['rows_copied']} dòng × {result['cols_copied']} cột
 📤 Copy từ: dòng {result['source_start_row']} (file mocks)
-📥 Paste vào: dòng {result['paste_start_row']} (file unit test)
+ Paste vào: dòng {result['paste_start_row']} (file unit test)
 🔲 Border: Đã thêm outside border bao quanh dữ liệu
 📋 Data_1 sheet: {'Đã copy thành công' if result['data_1_copied'] else 'Không tìm thấy sheet data_1'}
 📍 Vị trí data_1: dòng {result['data_1_start_row']}, cột {result['data_1_start_col']}
-📄 Bảng borders: Đã thêm từ dòng {result['table_start_row']} đến {result['table_end_row']}
-🗑️ Clean up: Đã xóa sheet data_1 sau khi copy
-✅ Trạng thái: {result['status']}
+ Bảng borders: Đã thêm từ dòng {result['table_start_row']} đến {result['table_end_row']}
+ Clean up: Đã xóa sheet data_1 sau khi copy
+ Trạng thái: {result['status']}
                 """
             
             messagebox.showinfo("Thành công", success_msg.strip())

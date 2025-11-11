@@ -11,7 +11,7 @@ def run_sql_from_folder(self):
     if not folder:
         return
 
-    self.output_text.insert("end", f"📂 Đã chọn thư mục: {folder}\n")
+    self.output_text.insert("end", f" Đã chọn thư mục: {folder}\n")
     self.output_text.see("end")
     self.tab.update()
 
@@ -20,7 +20,7 @@ def run_sql_from_folder(self):
         sql_files = sorted([f for f in os.listdir(folder) if f.endswith(".sql")])
 
         if not sql_files:
-            self.output_text.insert("end", "⚠️ Không tìm thấy file .sql nào trong thư mục.\n")
+            self.output_text.insert("end", " Không tìm thấy file .sql nào trong thư mục.\n")
             return
 
         for filename in sql_files:
@@ -34,11 +34,11 @@ def run_sql_from_folder(self):
                         if statement.strip():
                             cur.execute(statement)
 
-                self.output_text.insert("end", f"✅ Success: {filename}\n")
+                self.output_text.insert("end", f" Success: {filename}\n")
             except Exception as e:
-                self.output_text.insert("end", f"❌ Error in {filename}: {e}\n")
+                self.output_text.insert("end", f" Error in {filename}: {e}\n")
 
         conn.close()
         self.output_text.insert("end", "🎉 Đã xử lý xong toàn bộ file SQL.\n")
     except Exception as e:
-        self.output_text.insert("end", f"❌ Lỗi kết nối DB: {e}\n")
+        self.output_text.insert("end", f" Lỗi kết nối DB: {e}\n")

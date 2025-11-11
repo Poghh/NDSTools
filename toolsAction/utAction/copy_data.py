@@ -1612,7 +1612,7 @@ def get_copy_preview(test_file_path, doc_file_path):
                 start_source_row = 5
                 rows_to_copy = max_row - start_source_row + 1 if max_row >= start_source_row else 0
                 preview_info = f"""
-📊 Thông tin sheet nguồn:
+ Thông tin sheet nguồn:
 • Sheet: {sheet_name}
 • Tổng số dòng trong sheet: {max_row}
 • Copy từ dòng: {start_source_row} đến {max_row}
@@ -1622,18 +1622,18 @@ def get_copy_preview(test_file_path, doc_file_path):
                 """
                 source_wb.close()
             else:
-                preview_info = f"\n⚠️ Không tìm thấy sheet '{sheet_name}' trong file mocks"
+                preview_info = f"\n Không tìm thấy sheet '{sheet_name}' trong file mocks"
                 
         except Exception as e:
-            preview_info = f"\n⚠️ Không thể đọc thông tin sheet: {str(e)}"
+            preview_info = f"\n Không thể đọc thông tin sheet: {str(e)}"
         
         preview = f"""
 📋 Thông tin sao chép dữ liệu:
 
-📁 File mocks (nguồn): {test_name}
-📄 File unit test (đích): {doc_name}
+ File mocks (nguồn): {test_name}
+ File unit test (đích): {doc_name}
 
-🔄 Các thao tác sẽ thực hiện:
+ Các thao tác sẽ thực hiện:
 • Đọc dữ liệu từ dòng 5 trở đi trong sheet "項目一覧" của file mocks
 • Copy cả giá trị và formatting (borders, colors, fonts, merged cells)
 • Paste vào sheet "項目一覧" của file unit test với đầy đủ style
@@ -1645,7 +1645,7 @@ def get_copy_preview(test_file_path, doc_file_path):
 • Thêm thin border bên trong bảng để tạo lưới
 • Xóa sheet "data_1" sau khi copy xong để dọn dẹp{preview_info}
 
-⚡ Trạng thái: Sẵn sàng để thực hiện
+ Trạng thái: Sẵn sàng để thực hiện
         """
         
         return preview.strip()
@@ -1705,29 +1705,29 @@ def get_action_copy_preview(test_file_path, doc_file_path):
                 
                 if header_found:
                     preview_info = f"""
-📊 Thông tin sheet nguồn:
+ Thông tin sheet nguồn:
 • Sheet: {sheet_name}
 • Header "アクションNo." tìm thấy tại: Dòng {header_row}, Cột {header_col}
 • Số dữ liệu sẽ copy: {data_count} items
 • Dữ liệu sẽ được paste vào cột "アクションNo." của file đích
                     """
                 else:
-                    preview_info = f"\n⚠️ Không tìm thấy cột 'アクションNo.' trong sheet {sheet_name}"
+                    preview_info = f"\n Không tìm thấy cột 'アクションNo.' trong sheet {sheet_name}"
                 
                 source_wb.close()
             else:
-                preview_info = f"\n⚠️ Không tìm thấy sheet '{sheet_name}' trong file mocks"
+                preview_info = f"\n Không tìm thấy sheet '{sheet_name}' trong file mocks"
                 
         except Exception as e:
-            preview_info = f"\n⚠️ Không thể đọc thông tin sheet: {str(e)}"
+            preview_info = f"\n Không thể đọc thông tin sheet: {str(e)}"
         
         preview = f"""
 📋 Thông tin sao chép dữ liệu Action:
 
-📁 File mocks (nguồn): {test_name}
-📄 File unit test (đích): {doc_name}
+ File mocks (nguồn): {test_name}
+ File unit test (đích): {doc_name}
 
-🔄 Các thao tác sẽ thực hiện:
+ Các thao tác sẽ thực hiện:
 • Tìm header "アクションNo." trong sheet "アクション一覧" của file mocks
 • Copy toàn bộ dữ liệu bên dưới header này (cùng cột)
 • Paste dữ liệu vào bên dưới header trong file unit test
@@ -1747,7 +1747,7 @@ def get_action_copy_preview(test_file_path, doc_file_path):
 • Copy cả formatting (colors, fonts, borders)
 • Nếu không tìm thấy header trong file đích, sẽ tạo mới tại A1{preview_info}
 
-⚡ Trạng thái: Sẵn sàng để thực hiện
+ Trạng thái: Sẵn sàng để thực hiện
         """
         
         return preview.strip() 

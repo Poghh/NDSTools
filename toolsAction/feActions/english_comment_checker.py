@@ -45,16 +45,16 @@ def check_english_comments(file_path: str) -> list[str]:
         with open(file_path, encoding="utf-8") as f:
             content = f.read()
     except Exception as e:
-        return [f"❌ Error reading file {os.path.basename(file_path)}: {str(e)}"]
+        return [f" Error reading file {os.path.basename(file_path)}: {str(e)}"]
 
     english_comments = find_english_comments(content)
     if not english_comments:
-        return [f"✅ No English comments found in {os.path.basename(file_path)}"]
+        return [f" No English comments found in {os.path.basename(file_path)}"]
 
     results = []
     for line_num, comment, eng_words in english_comments:
         results.append(
-            f"⚠️ Line {line_num}: Found English words in comment: {', '.join(eng_words)}\n   {comment}"
+            f" Line {line_num}: Found English words in comment: {', '.join(eng_words)}\n   {comment}"
         )
 
     return results
@@ -73,17 +73,17 @@ def check_english_comments_main(app):
         found_english = False
         for file_path in files:
             results = check_english_comments(file_path)
-            if any("⚠️" in result for result in results):
+            if any("" in result for result in results):
                 found_english = True
                 app.output_text.insert(
-                    tk.END, f"\n🔍 {os.path.basename(file_path)}:\n", "highlight"
+                    tk.END, f"\n {os.path.basename(file_path)}:\n", "highlight"
                 )
                 for result in results:
-                    tag = "warning" if "⚠️" in result else "success"
+                    tag = "warning" if "" in result else "success"
                     app.output_text.insert(tk.END, f"{result}\n", tag)
 
         if not found_english:
-            app.output_text.insert(tk.END, "✅ No English comments found in any files\n", "success")
+            app.output_text.insert(tk.END, " No English comments found in any files\n", "success")
 
     finally:
         app.set_running_state(False)

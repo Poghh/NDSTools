@@ -12,7 +12,7 @@ def run_eslint(self):
         return
 
     for file_path in files:
-        self.output_text.insert(tk.END, f"\n🔧 ESLint: {file_path}\n")
+        self.output_text.insert(tk.END, f"\n ESLint: {file_path}\n")
         self.output_text.see(tk.END)
         self.root.update()
 
@@ -29,10 +29,10 @@ def run_eslint(self):
             self.display_output(result.stderr)
 
             if result.returncode != 0:
-                self.output_text.insert(tk.END, f"❌ ESLint lỗi ở: {file_path}\n", "error")
+                self.output_text.insert(tk.END, f" ESLint lỗi ở: {file_path}\n", "error")
 
         except Exception as e:
-            self.output_text.insert(tk.END, f"❌ Lỗi khi xử lý ESLint: {str(e)}\n", "error")
+            self.output_text.insert(tk.END, f" Lỗi khi xử lý ESLint: {str(e)}\n", "error")
 
-    self.output_text.insert(tk.END, "\n✅ ESLint hoàn tất.\n")
+    self.output_text.insert(tk.END, "\n ESLint hoàn tất.\n")
     self.set_running_state(False)

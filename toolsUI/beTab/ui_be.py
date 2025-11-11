@@ -18,7 +18,7 @@ from toolsUI.beTab.unit_test_generater_dialog import UnitTestDialog
 class BackEndTab:
     def __init__(self, parent):
         self.tab = tk.Frame(parent)
-        parent.add(self.tab, text="⚙️Back-End")
+        parent.add(self.tab, text="Back-End")
         self.build_ui()
 
     def build_ui(self):
@@ -39,7 +39,7 @@ class BackEndTab:
         frame_output.columnconfigure(0, weight=1)
 
         # === [1] SELF CHECK === (được đưa lên đầu tiên)
-        helper_frame = tk.LabelFrame(frame_input, text="📁 Self Check", bg="lightgray")
+        helper_frame = tk.LabelFrame(frame_input, text=" Self Check", bg="lightgray")
         helper_frame.grid(row=0, column=0, sticky="nsew", pady=(0, 10))
 
         self.self_check_path = None

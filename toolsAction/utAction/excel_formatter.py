@@ -52,7 +52,7 @@ def format_excel_file_xlwings(file_path, output_callback=None):
     """
     try:
         if output_callback:
-            output_callback(f"📝 Đang xử lý với xlwings: {os.path.basename(file_path)}")
+            output_callback(f" Đang xử lý với xlwings: {os.path.basename(file_path)}")
         
         # Mở Excel application (ẩn)
         app = xw.App(visible=False, add_book=False)
@@ -85,14 +85,14 @@ def format_excel_file_xlwings(file_path, output_callback=None):
                         
                     except Exception as com_error:
                         if output_callback:
-                            output_callback(f"    ⚠️ COM API lỗi: {str(com_error)}")
+                            output_callback(f"     COM API lỗi: {str(com_error)}")
                     
                     if output_callback:
-                        output_callback(f"  ✅ Sheet '{sheet.name}': A1, Zoom 100%, Scroll Top-Left")
+                        output_callback(f"   Sheet '{sheet.name}': A1, Zoom 100%, Scroll Top-Left")
                         
                 except Exception as sheet_error:
                     if output_callback:
-                        output_callback(f"  ⚠️ Sheet '{sheet.name}': Lỗi {str(sheet_error)}")
+                        output_callback(f"   Sheet '{sheet.name}': Lỗi {str(sheet_error)}")
             
             # Đặt sheet đầu tiên làm active cuối cùng
             if wb.sheets:
@@ -110,13 +110,13 @@ def format_excel_file_xlwings(file_path, output_callback=None):
             app.quit()
         
         if output_callback:
-            output_callback(f"✅ Hoàn thành (xlwings): {os.path.basename(file_path)}\n")
+            output_callback(f" Hoàn thành (xlwings): {os.path.basename(file_path)}\n")
         
         return True
         
     except Exception as e:
         if output_callback:
-            output_callback(f"❌ Lỗi xlwings {os.path.basename(file_path)}: {str(e)}\n")
+            output_callback(f" Lỗi xlwings {os.path.basename(file_path)}: {str(e)}\n")
         return False
 
 
@@ -146,7 +146,7 @@ def format_excel_file_openpyxl(file_path, output_callback=None, force_format=Fal
     """
     try:
         if output_callback:
-            output_callback(f"📝 Đang xử lý: {os.path.basename(file_path)}")
+            output_callback(f" Đang xử lý: {os.path.basename(file_path)}")
         
         # Mở workbook để kiểm tra
         workbook = openpyxl.load_workbook(file_path)
@@ -165,8 +165,8 @@ def format_excel_file_openpyxl(file_path, output_callback=None, force_format=Fal
         
         if has_objects and not force_format:
             if output_callback:
-                output_callback(f"  ⚠️ PHÁT HIỆN {object_count} objects/images trong file")
-                output_callback(f"  🛡️ Để bảo vệ linked objects, tool sẽ BỎ QUA file này")
+                output_callback(f"   PHÁT HIỆN {object_count} objects/images trong file")
+                output_callback(f"   Để bảo vệ linked objects, tool sẽ BỎ QUA file này")
                 output_callback(f"  💡 Bật 'Force Format' nếu muốn xử lý dù có rủi ro")
             
             workbook.close()
@@ -174,7 +174,7 @@ def format_excel_file_openpyxl(file_path, output_callback=None, force_format=Fal
         
         elif has_objects and force_format:
             if output_callback:
-                output_callback(f"  ⚠️ PHÁT HIỆN {object_count} objects/images - NHƯNG VẪN XỬ LÝ")
+                output_callback(f"   PHÁT HIỆN {object_count} objects/images - NHƯNG VẪN XỬ LÝ")
                 output_callback(f"  🚨 CẢNH BÁO: Linked objects có thể bị mất!")
         
         # Tiến hành format (có hoặc không có objects tùy theo force_format)
@@ -195,11 +195,11 @@ def format_excel_file_openpyxl(file_path, output_callback=None, force_format=Fal
                     worksheet.sheet_view.topLeftCell = 'A1'
                     
                     if output_callback:
-                        output_callback(f"  ✅ Sheet '{sheet_name}': A1, Zoom 100%, Scroll Top-Left")
+                        output_callback(f"   Sheet '{sheet_name}': A1, Zoom 100%, Scroll Top-Left")
                         
                 except Exception as sheet_error:
                     if output_callback:
-                        output_callback(f"  ⚠️ Sheet '{sheet_name}': Lỗi {str(sheet_error)}")
+                        output_callback(f"   Sheet '{sheet_name}': Lỗi {str(sheet_error)}")
             
             # 2. Đặt sheet đầu tiên làm active
             if workbook.sheetnames:
@@ -218,13 +218,13 @@ def format_excel_file_openpyxl(file_path, output_callback=None, force_format=Fal
             raise e
         
         if output_callback:
-            output_callback(f"✅ Hoàn thành: {os.path.basename(file_path)}\n")
+            output_callback(f" Hoàn thành: {os.path.basename(file_path)}\n")
         
         return True
         
     except Exception as e:
         if output_callback:
-            output_callback(f"❌ Lỗi xử lý {os.path.basename(file_path)}: {str(e)}\n")
+            output_callback(f" Lỗi xử lý {os.path.basename(file_path)}: {str(e)}\n")
         return False
 
 
@@ -244,26 +244,26 @@ def process_screen_folders(screen_list, base_folder, output_callback=None, force
     results = {}
     
     if output_callback:
-        output_callback("🔍 Bắt đầu tìm kiếm folder màn hình...\n")
+        output_callback(" Bắt đầu tìm kiếm folder màn hình...\n")
     
     # Tìm folder tương ứng
     found_folders = find_screen_folders(screen_list, base_folder)
     
     if not found_folders:
         if output_callback:
-            output_callback("❌ Không tìm thấy folder nào phù hợp!\n")
+            output_callback(" Không tìm thấy folder nào phù hợp!\n")
         return results
     
     if output_callback:
-        output_callback(f"✅ Tìm thấy {len(found_folders)} folder:\n")
+        output_callback(f" Tìm thấy {len(found_folders)} folder:\n")
         for screen, folder_path in found_folders.items():
-            output_callback(f"  📁 {screen} → {folder_path}\n")
+            output_callback(f"   {screen} → {folder_path}\n")
         output_callback("\n")
     
     # Xử lý từng folder
     for screen_name, folder_path in found_folders.items():
         if output_callback:
-            output_callback(f"📂 Xử lý folder: {screen_name}\n")
+            output_callback(f" Xử lý folder: {screen_name}\n")
         
         # Tìm tất cả file Excel trong folder (bao gồm cả subfolder)
         excel_files = []
@@ -281,10 +281,10 @@ def process_screen_folders(screen_list, base_folder, output_callback=None, force
         
         if not excel_files:
             if output_callback:
-                output_callback(f"  ⚠️ Không tìm thấy file Excel nào trong {screen_name}\n")
+                output_callback(f"   Không tìm thấy file Excel nào trong {screen_name}\n")
         else:
             if output_callback:
-                output_callback(f"  📊 Tìm thấy {len(excel_files)} file Excel\n")
+                output_callback(f"   Tìm thấy {len(excel_files)} file Excel\n")
                 # Debug: hiển thị danh sách file tìm được
                 for i, file_path in enumerate(excel_files, 1):
                     file_name = os.path.basename(file_path)
@@ -310,7 +310,7 @@ def process_screen_folders(screen_list, base_folder, output_callback=None, force
         }
         
         if output_callback:
-            output_callback(f"📊 Kết quả {screen_name}: {success_count} thành công, {error_count} lỗi\n")
+            output_callback(f" Kết quả {screen_name}: {success_count} thành công, {error_count} lỗi\n")
             output_callback("-" * 50 + "\n")
     
     return results

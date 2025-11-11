@@ -20,7 +20,7 @@ from toolsAction.feActions.title_checker import check_title_comment
 class FrontEndTab:
     def __init__(self, tab_parent):
         self.tab = ttk.Frame(tab_parent, style="Custom.TFrame")
-        tab_parent.add(self.tab, text="🌐 Front-End")
+        tab_parent.add(self.tab, text="Front-End")
         self.icons = {}
         self.eslint_running = False
         self.eslint_thread = None
@@ -68,7 +68,7 @@ class FrontEndTab:
 
         self.frame_input = ttk.LabelFrame(
             self.top_frame,
-            text="🔹 Nhập danh sách path cần kiểm tra",
+            text=" Nhập danh sách path cần kiểm tra",
             padding=12,
             style="Custom.TLabelframe",
         )
@@ -82,7 +82,7 @@ class FrontEndTab:
         if upload_icon:
             self.upload_selfcheck_btn = tk.Button(
                 self.selfcheck_frame,
-                text="📂 Tải file Self-check",
+                text=" Tải file Self-check",
                 image=upload_icon,
                 compound=tk.LEFT,
                 command=self.upload_selfcheck,
@@ -99,7 +99,7 @@ class FrontEndTab:
         else:
             self.upload_selfcheck_btn = tk.Button(
                 self.selfcheck_frame,
-                text="📂 Tải file Self-check",
+                text=" Tải file Self-check",
                 command=self.upload_selfcheck,
                 bg="#fff",
                 fg="#222",
@@ -145,7 +145,7 @@ class FrontEndTab:
 
         self.frame_future = ttk.LabelFrame(
             self.top_frame,
-            text="🧩 Tải lên tài liệu (Excel)",
+            text=" Tải lên tài liệu (Excel)",
             padding=12,
             style="Custom.TLabelframe",
         )
@@ -156,7 +156,7 @@ class FrontEndTab:
         if upload_excel_icon:
             self.upload_excel_btn = tk.Button(
                 self.frame_future,
-                text="📂 Tải file tài liệu",
+                text=" Tải file tài liệu",
                 image=upload_excel_icon,
                 compound=tk.LEFT,
                 command=self.upload_excel_docs,
@@ -173,7 +173,7 @@ class FrontEndTab:
         else:
             self.upload_excel_btn = tk.Button(
                 self.frame_future,
-                text="📂 Tải file tài liệu",
+                text=" Tải file tài liệu",
                 command=self.upload_excel_docs,
                 bg="#fff",
                 fg="#222",
@@ -222,7 +222,7 @@ class FrontEndTab:
 
         tk.Label(
             self.author_subframe,
-            text="👤 Nhập tên tác giả:",
+            text=" Nhập tên tác giả:",
             bg="#e3eafc",
             font=("Segoe UI", 10, "bold"),
         ).pack(side=tk.LEFT, padx=(0, 10))
@@ -246,17 +246,17 @@ class FrontEndTab:
 
         # Sắp xếp lại các nút, mỗi hàng 6 nút, tăng bo góc và padding
         btns = [
-            ("🚀 Run ESLint", self.on_run_eslint),
-            ("📝 Check Title", self.on_check_title_comment),
-            ("🎨 Check CSS", self.on_check_css_color),
-            ("🔍 Check JP Text", self.on_check_hardcode_jp),
-            ("🛑 Check Console", self.on_check_console),
-            ("🔤 Check Eng Cmt", self.on_check_english_comments),
-            ("🔒 Check Values", self.on_check_hardcode_values),
-            ("🧮 Count Lines", self.on_count_lines),
-            ("📘 Check JSDoc", self.on_check_jsdoc, True),
-            ("⚡ Check Vue", self.on_check_vue_order, True),
-            ("🔄 Clear All", self.clear_all),
+            (" Run ESLint", self.on_run_eslint),
+            (" Check Title", self.on_check_title_comment),
+            (" Check CSS", self.on_check_css_color),
+            (" Check JP Text", self.on_check_hardcode_jp),
+            (" Check Console", self.on_check_console),
+            (" Check Eng Cmt", self.on_check_english_comments),
+            (" Check Values", self.on_check_hardcode_values),
+            (" Count Lines", self.on_count_lines),
+            (" Check JSDoc", self.on_check_jsdoc, True),
+            (" Check Vue", self.on_check_vue_order, True),
+            (" Clear All", self.clear_all),
         ]
         self.buttons = []
         col_count = 6
@@ -334,27 +334,27 @@ class FrontEndTab:
                 file_path = file_path[1:-1]
 
             if not file_path.lower().endswith((".xlsx", ".xls")):
-                self.selfcheck_label.config(text="❌ Chỉ chấp nhận file Excel", fg="red")
+                self.selfcheck_label.config(text=" Chỉ chấp nhận file Excel", fg="red")
                 return
 
             self.process_selfcheck_excel(file_path)
         except Exception as e:
-            self.selfcheck_label.config(text=f"❌ Lỗi: {str(e)}", fg="red")
+            self.selfcheck_label.config(text=f" Lỗi: {str(e)}", fg="red")
 
     def process_selfcheck_excel(self, file_path):
         if not file_path:
-            self.selfcheck_label.config(text="❌ Không có file nào được chọn", fg="red")
+            self.selfcheck_label.config(text=" Không có file nào được chọn", fg="red")
             self.path_input.delete("1.0", tk.END)
             return
 
         file_name = os.path.basename(file_path)
-        self.selfcheck_label.config(text=f"📁 {file_name}", fg="green")
+        self.selfcheck_label.config(text=f" {file_name}", fg="green")
         self.path_input.delete("1.0", tk.END)
 
         try:
             workbook = pd.read_excel(file_path, sheet_name="機能別ソース一覧", header=None)
         except Exception as e:
-            self.path_input.insert(tk.END, f"❌ Lỗi khi đọc sheet 機能別ソース一覧: {str(e)}\n")
+            self.path_input.insert(tk.END, f" Lỗi khi đọc sheet 機能別ソース一覧: {str(e)}\n")
             return
 
         result = []
@@ -379,27 +379,27 @@ class FrontEndTab:
                 file_path = file_path[1:-1]
 
             if not file_path.lower().endswith((".xlsx", ".xls")):
-                self.excel_label.config(text="❌ Chỉ chấp nhận file Excel", fg="red")
+                self.excel_label.config(text=" Chỉ chấp nhận file Excel", fg="red")
                 return
 
             self.process_excel_docs(file_path)
         except Exception as e:
-            self.excel_label.config(text=f"❌ Lỗi: {str(e)}", fg="red")
+            self.excel_label.config(text=f" Lỗi: {str(e)}", fg="red")
 
     def process_excel_docs(self, file_path):
         if not file_path:
-            self.excel_label.config(text="❌ Không có file nào được chọn", fg="red")
+            self.excel_label.config(text=" Không có file nào được chọn", fg="red")
             self.excel_output.delete("1.0", tk.END)
             return
 
         file_name = os.path.basename(file_path)
-        self.excel_label.config(text=f"📁 {file_name}", fg="green")
+        self.excel_label.config(text=f" {file_name}", fg="green")
         self.excel_output.delete("1.0", tk.END)
 
         try:
             workbook = pd.read_excel(file_path, sheet_name="項目一覧", header=None)
         except Exception as e:
-            self.excel_output.insert(tk.END, f"❌ Lỗi khi đọc sheet 項目一覧: {str(e)}\n")
+            self.excel_output.insert(tk.END, f" Lỗi khi đọc sheet 項目一覧: {str(e)}\n")
             return
 
         result = []
@@ -432,7 +432,7 @@ class FrontEndTab:
                 }
                 unique_result.append(item_gui)
             except Exception as e:
-                self.excel_output.insert(tk.END, f"⚠️ Lỗi khi lấy GUI code/name: {str(e)}\n")
+                self.excel_output.insert(tk.END, f" Lỗi khi lấy GUI code/name: {str(e)}\n")
 
         for item in result:
             if item["code"] not in seen:
@@ -440,7 +440,7 @@ class FrontEndTab:
                 unique_result.append(item)
 
         for item in unique_result:
-            self.excel_output.insert(tk.END, f"🔹 {item['code']} - {item['name']}\n")
+            self.excel_output.insert(tk.END, f" {item['code']} - {item['name']}\n")
 
     def upload_selfcheck(self):
         file_path = filedialog.askopenfilename(
@@ -554,11 +554,11 @@ class FrontEndTab:
 
     def on_check_jsdoc(self):
         self.output_text.delete("1.0", tk.END)
-        self.output_text.insert("end", "📘 Tính năng tạm ngừng\n", "warning")
+        self.output_text.insert("end", " Tính năng tạm ngừng\n", "warning")
 
     def on_check_vue_order(self):
         self.output_text.delete("1.0", tk.END)
-        self.output_text.insert("end", "⚡ Tính năng tạm ngừng\n", "warning")
+        self.output_text.insert("end", " Tính năng tạm ngừng\n", "warning")
 
     def on_check_english_comments(self):
         self.output_text.delete("1.0", tk.END)
@@ -587,14 +587,14 @@ class FrontEndTab:
         input_text = self.path_input.get("1.0", tk.END)
         files = [line.strip() for line in input_text.splitlines() if line.strip()]
         if not files:
-            self.output_text.insert(tk.END, "❌ Vui lòng nhập danh sách file.\n", "error")
+            self.output_text.insert(tk.END, " Vui lòng nhập danh sách file.\n", "error")
         return files
 
     def display_output(self, text):
         for line in text.splitlines():
             tag = (
                 "error"
-                if any(keyword in line.lower() for keyword in ["error", "✖", "❌"])
+                if any(keyword in line.lower() for keyword in ["error", "", ""])
                 else None
             )
             # Fix text widget tag insertion - only pass tag if it's not None
@@ -619,7 +619,7 @@ class FrontEndTab:
             if "ESLint" in btn.cget("text"):
                 continue
             btn.config(state=state)
-        self.status_label.config(text="⏳ Đang xử lý..." if running else "✅ Sẵn sàng.")
+        self.status_label.config(text=" Đang xử lý..." if running else " Sẵn sàng.")
 
     def update_eslint_button(self):
         for btn in self.buttons:
@@ -627,4 +627,4 @@ class FrontEndTab:
                 if self.eslint_running:
                     btn.config(text="⛔ Hủy ESLint")
                 else:
-                    btn.config(text="🚀 Run ESLint")
+                    btn.config(text=" Run ESLint")

@@ -25,7 +25,7 @@ def run_database_initialization(self):
     if not confirm:
         return
 
-    _log(self, "🚀 Bắt đầu khởi tạo cơ sở dữ liệu...\n")
+    _log(self, " Bắt đầu khởi tạo cơ sở dữ liệu...\n")
 
     try:
         latest_sql_file = find_latest_dump_file()
@@ -33,7 +33,7 @@ def run_database_initialization(self):
         run_additional_sql_commands(lambda msg: _log(self, msg))
         _log(self, "🎉 Khởi tạo DB hoàn tất!\n")
     except Exception as e:
-        _log(self, f"❌ Đã xảy ra lỗi: {str(e)}\n")
+        _log(self, f" Đã xảy ra lỗi: {str(e)}\n")
 
 
 def _log(self, msg):
@@ -48,7 +48,7 @@ def find_latest_dump_file():
 
     if not dump_files:
         raise FileNotFoundError(
-            "❌ Không tìm thấy file dump nào có dạng Dump*.sql trong thư mục hiện tại."
+            " Không tìm thấy file dump nào có dạng Dump*.sql trong thư mục hiện tại."
         )
 
     latest_file = sorted(dump_files)[-1]
@@ -71,9 +71,9 @@ def run_sql_dump_with_cli(dump_file_path, output_callback=print):
 
         conn.commit()
         conn.close()
-        output_callback("✅ Dump file chạy thành công.")
+        output_callback(" Dump file chạy thành công.")
     except Exception as e:
-        raise RuntimeError(f"❌ Lỗi khi chạy dump file bằng pymysql:\n{e}") from e
+        raise RuntimeError(f" Lỗi khi chạy dump file bằng pymysql:\n{e}") from e
 
 
 def run_additional_sql_commands(output_callback=print):
@@ -81,7 +81,7 @@ def run_additional_sql_commands(output_callback=print):
     output_callback("▶ Đang xử lý bước chạy lệnh SQL bổ sung trong thư mục /db ...")
 
     if not os.path.isdir(DB_FOLDER_PATH):
-        raise FileNotFoundError(f"❌ Không tìm thấy thư mục db tại: {DB_FOLDER_PATH}")
+        raise FileNotFoundError(f" Không tìm thấy thư mục db tại: {DB_FOLDER_PATH}")
 
     # 1. SET GLOBAL sql_mode
     sql_mode_cmd = (
@@ -95,7 +95,7 @@ def run_additional_sql_commands(output_callback=print):
     # 2. Import ddl_all.sql
     ddl_path = os.path.join(DB_FOLDER_PATH, "ddl_all.sql")
     if not os.path.isfile(ddl_path):
-        raise FileNotFoundError("❌ Không tìm thấy ddl_all.sql")
+        raise FileNotFoundError(" Không tìm thấy ddl_all.sql")
 
     ddl_cmd = (
         f"mysql -h {DB_CONFIG['host']} -P {DB_CONFIG['port']} -u root -ppass! "
@@ -107,7 +107,7 @@ def run_additional_sql_commands(output_callback=print):
     # 3. Import dml_all.sql
     dml_path = os.path.join(DB_FOLDER_PATH, "dml_all.sql")
     if not os.path.isfile(dml_path):
-        raise FileNotFoundError("❌ Không tìm thấy dml_all.sql")
+        raise FileNotFoundError(" Không tìm thấy dml_all.sql")
 
     dml_cmd = (
         f"mysql -h {DB_CONFIG['host']} -P {DB_CONFIG['port']} -u devuser -p devuser "

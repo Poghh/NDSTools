@@ -23,15 +23,15 @@ if "--watch" in sys.argv:
 
         def restart_app(self):
             if self.process:
-                print("🛑 Dừng app cũ...")
+                print(" Dừng app cũ...")
                 self.process.kill()
                 self.process.wait()
-            print("🔁 Đang khởi động lại app...")
+            print(" Đang khởi động lại app...")
             self.process = subprocess.Popen(["python", __file__])
 
         def on_modified(self, event):
             if str(event.src_path).endswith(".py"):
-                print(f"📝 File thay đổi: {event.src_path}")
+                print(f" File thay đổi: {event.src_path}")
                 self.restart_app()
 
     if __name__ == "__main__":

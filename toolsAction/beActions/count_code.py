@@ -45,10 +45,10 @@ def count_code(listbox_widget, output_widget):
             total_code_lines += code_lines
             total_comment_lines += comment_lines
 
-            results.append(f"✅ {file_path}\n  Code: {code_lines}, Comment: {comment_lines}\n")
+            results.append(f" {file_path}\n  Code: {code_lines}, Comment: {comment_lines}\n")
 
         except Exception as e:
-            results.append(f"❌ {file_path}\n  Error: {str(e)}\n")
+            results.append(f" {file_path}\n  Error: {str(e)}\n")
 
     # Duyệt tất cả file trong listbox
     for index in range(listbox_widget.size()):
@@ -64,4 +64,4 @@ def count_code(listbox_widget, output_widget):
         output_widget.insert(tk.END, line)
     output_widget.insert(tk.END, "\n==== TOTAL ====\n")
     output_widget.insert(tk.END, f"🧾 Total Code Lines: {total_code_lines}\n")
-    output_widget.insert(tk.END, f"📝 Total Comment Lines: {total_comment_lines}\n")
+    output_widget.insert(tk.END, f" Total Comment Lines: {total_comment_lines}\n")

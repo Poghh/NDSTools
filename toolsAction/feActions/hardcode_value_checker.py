@@ -54,7 +54,7 @@ def check_hardcoded_values(file_path: str) -> list[str]:
         with open(file_path, encoding="utf-8") as f:
             content = f.read()
     except Exception as e:
-        return [f"❌ Error reading file {os.path.basename(file_path)}: {str(e)}"]
+        return [f" Error reading file {os.path.basename(file_path)}: {str(e)}"]
 
     hardcoded_values = find_hardcoded_comparisons(content)
     if not hardcoded_values:
@@ -64,7 +64,7 @@ def check_hardcoded_values(file_path: str) -> list[str]:
     for line_num, line_content, value in hardcoded_values:
         suggestion = "Consider using a constant instead"
         results.append(
-            f"⚠️ Line {line_num}: Hardcoded value {value} in comparison\n"
+            f" Line {line_num}: Hardcoded value {value} in comparison\n"
             f"   {line_content}\n"
             f"   💡 {suggestion}"
         )
@@ -91,14 +91,14 @@ def check_hardcoded_values_main(app):
                 if results:
                     found_issues = True
                     app.output_text.insert(
-                        tk.END, f"\n🔍 {os.path.basename(file_path)}:\n", "highlight"
+                        tk.END, f"\n {os.path.basename(file_path)}:\n", "highlight"
                     )
                     for result in results:
                         app.output_text.insert(tk.END, f"{result}\n", "warning")
 
         if not found_issues:
             app.output_text.insert(
-                tk.END, "✅ No hardcoded values found in comparisons\n", "success"
+                tk.END, " No hardcoded values found in comparisons\n", "success"
             )
 
     finally:

@@ -10,19 +10,19 @@ def upload_excel(self):
         title="Chọn file Excel", filetypes=[("Excel files", "*.xlsx *.xls")]
     )
     if not file_path:
-        self.excel_label.config(text="❌ Không có file nào được chọn", fg="red")
+        self.excel_label.config(text=" Không có file nào được chọn", fg="red")
         # Clear the output text area
         self.excel_output.delete("1.0", tk.END)
         return
 
     file_name = os.path.basename(file_path)
-    self.excel_label.config(text=f"📁 {file_name}", fg="green")
+    self.excel_label.config(text=f" {file_name}", fg="green")
     self.excel_output.delete("1.0", tk.END)
 
     try:
         workbook = pd.read_excel(file_path, sheet_name="項目一覧", header=None)
     except Exception as e:
-        self.excel_output.insert(tk.END, f"❌ Lỗi khi đọc sheet 項目一覧: {str(e)}\n")
+        self.excel_output.insert(tk.END, f" Lỗi khi đọc sheet 項目一覧: {str(e)}\n")
         return
 
     result = []
@@ -51,7 +51,7 @@ def upload_excel(self):
             }
             unique_result.append(item_gui)
         except Exception as e:
-            self.excel_output.insert(tk.END, f"⚠️ Lỗi khi lấy GUI code/name: {str(e)}\n")
+            self.excel_output.insert(tk.END, f" Lỗi khi lấy GUI code/name: {str(e)}\n")
 
     for item in result:
         if item["code"] not in seen:
@@ -59,7 +59,7 @@ def upload_excel(self):
             unique_result.append(item)
 
     for item in unique_result:
-        self.excel_output.insert(tk.END, f"🔹 {item['code']} - {item['name']}\n")
+        self.excel_output.insert(tk.END, f" {item['code']} - {item['name']}\n")
 
 
 def convert_author_to_uppercase(self, *args):

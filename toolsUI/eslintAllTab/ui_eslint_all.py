@@ -13,7 +13,7 @@ from tkinterdnd2 import DND_FILES
 class EslintAllTab:
     def __init__(self, tab_parent):
         self.tab = ttk.Frame(tab_parent, style="Custom.TFrame")
-        tab_parent.add(self.tab, text="🔍 Check Eslint All")
+        tab_parent.add(self.tab, text="Check Eslint All")
         
         # State variables
         self.selfcheck_running = False
@@ -56,7 +56,7 @@ class EslintAllTab:
         # Input section
         input_frame = ttk.LabelFrame(
             main_frame,
-            text="📁 Cấu hình kiểm tra",
+            text=" Cấu hình kiểm tra",
             padding=12,
             style="Custom.TLabelframe",
         )
@@ -68,7 +68,7 @@ class EslintAllTab:
 
         tk.Label(
             folder_frame,
-            text="📂 Folder chứa file selfcheck:",
+            text=" Folder chứa file selfcheck:",
             bg="#e3eafc",
             font=("Segoe UI", 10, "bold"),
         ).pack(side=tk.LEFT, padx=(0, 10))
@@ -114,7 +114,7 @@ class EslintAllTab:
 
         tk.Label(
             left_column,
-            text="🖥️ Tên các màn hình:",
+            text=" Tên các màn hình:",
             bg="#e3eafc",
             font=("Segoe UI", 10, "bold"),
         ).grid(row=0, column=0, sticky="nw", pady=(0, 5))
@@ -146,7 +146,7 @@ class EslintAllTab:
 
         self.check_duplicate_btn = tk.Button(
             duplicate_frame,
-            text="🗑️ Loại bỏ trùng & Sắp xếp",
+            text=" Loại bỏ trùng & Sắp xếp",
             command=self.remove_duplicates,
             bg="#fff",
             fg="#222",
@@ -176,7 +176,7 @@ class EslintAllTab:
 
         tk.Label(
             right_column,
-            text="📄 Danh sách tài liệu:",
+            text=" Danh sách tài liệu:",
             bg="#e3eafc",
             font=("Segoe UI", 10, "bold"),
         ).grid(row=0, column=0, sticky="nw", pady=(0, 5))
@@ -199,7 +199,7 @@ class EslintAllTab:
 
         self.check_files_btn = tk.Button(
             check_files_frame,
-            text="📁 Kiểm tra file",
+            text=" Kiểm tra file",
             command=self.check_files,
             bg="#fff",
             fg="#222",
@@ -218,7 +218,7 @@ class EslintAllTab:
         # Check selfcheck button
         self.selfcheck_btn = tk.Button(
             button_frame,
-            text="🔍 Kiểm tra file selfcheck",
+            text=" Kiểm tra file selfcheck",
             command=self.check_selfcheck,
             bg="#fff",
             fg="#222",
@@ -233,7 +233,7 @@ class EslintAllTab:
         # Check eslint button
         self.eslint_btn = tk.Button(
             button_frame,
-            text="🚀 Kiểm tra ESLint",
+            text=" Kiểm tra ESLint",
             command=self.check_eslint,
             bg="#fff",
             fg="#222",
@@ -248,7 +248,7 @@ class EslintAllTab:
         # Clear all button
         self.clear_btn = tk.Button(
             button_frame,
-            text="🗑️ Clear toàn bộ",
+            text=" Clear toàn bộ",
             command=self.clear_all,
             bg="#fff",
             fg="#222",
@@ -286,7 +286,7 @@ class EslintAllTab:
         # ESLint results
         eslint_result_frame = ttk.LabelFrame(
             results_frame,
-            text="🚀 Kết quả kiểm tra ESLint",
+            text=" Kết quả kiểm tra ESLint",
             padding=8,
             style="Custom.TLabelframe",
         )
@@ -319,7 +319,7 @@ class EslintAllTab:
         if folder_path:
             self.folder_path = folder_path
             folder_name = os.path.basename(folder_path)
-            self.folder_label.config(text=f"📁 {folder_name}", fg="green")
+            self.folder_label.config(text=f" {folder_name}", fg="green")
         else:
             self.folder_label.config(text="Chưa chọn folder", fg="gray")
 
@@ -337,20 +337,20 @@ class EslintAllTab:
                     self.screen_input.delete("1.0", tk.END)
                     self.screen_input.insert("1.0", content)
         except Exception as e:
-            self.display_selfcheck_output(f"❌ Lỗi khi đọc file: {str(e)}", "error")
+            self.display_selfcheck_output(f" Lỗi khi đọc file: {str(e)}", "error")
 
     def remove_duplicates(self):
         """Remove duplicates from screen names list and sort"""
         input_text = self.screen_input.get("1.0", tk.END).strip()
         if not input_text:
-            self.duplicate_status.config(text="❌ Chưa có danh sách", fg="red")
+            self.duplicate_status.config(text=" Chưa có danh sách", fg="red")
             return
         
         # Get all lines and filter out empty lines
         all_lines = [line.strip() for line in input_text.splitlines() if line.strip()]
         
         if not all_lines:
-            self.duplicate_status.config(text="❌ Danh sách trống", fg="red")
+            self.duplicate_status.config(text=" Danh sách trống", fg="red")
             return
         
         # Remove duplicates while preserving order
@@ -376,12 +376,12 @@ class EslintAllTab:
         if original_count != unique_count:
             removed_count = original_count - unique_count
             self.duplicate_status.config(
-                text=f"✅ Đã loại bỏ {removed_count} trùng & sắp xếp",
+                text=f" Đã loại bỏ {removed_count} trùng & sắp xếp",
                 fg="green"
             )
         else:
             self.duplicate_status.config(
-                text="✅ Đã sắp xếp (không có trùng)",
+                text=" Đã sắp xếp (không có trùng)",
                 fg="blue"
             )
 
@@ -430,9 +430,9 @@ class EslintAllTab:
         self.eslint_output.delete("1.0", tk.END)
         
         # Reset button states
-        self.check_files_btn.config(text="📁 Kiểm tra file", state=tk.NORMAL)
-        self.selfcheck_btn.config(text="🔍 Kiểm tra file selfcheck", state=tk.NORMAL)
-        self.eslint_btn.config(text="🚀 Kiểm tra ESLint", state=tk.NORMAL)
+        self.check_files_btn.config(text=" Kiểm tra file", state=tk.NORMAL)
+        self.selfcheck_btn.config(text=" Kiểm tra file selfcheck", state=tk.NORMAL)
+        self.eslint_btn.config(text=" Kiểm tra ESLint", state=tk.NORMAL)
         
         # Reset running states
         self.check_files_running = False
@@ -445,16 +445,16 @@ class EslintAllTab:
             return
             
         if not self.folder_path:
-            self.display_doc_output("❌ Vui lòng chọn folder chứa file selfcheck", "error")
+            self.display_doc_output(" Vui lòng chọn folder chứa file selfcheck", "error")
             return
             
         screen_names = self.get_screen_names()
         if not screen_names:
-            self.display_doc_output("❌ Vui lòng nhập tên các màn hình", "error")
+            self.display_doc_output(" Vui lòng nhập tên các màn hình", "error")
             return
 
         self.check_files_running = True
-        self.check_files_btn.config(text="⏳ Đang kiểm tra...", state=tk.DISABLED)
+        self.check_files_btn.config(text=" Đang kiểm tra...", state=tk.DISABLED)
         
         # Clear doc output
         self.doc_output.config(state=tk.NORMAL)
@@ -511,10 +511,10 @@ class EslintAllTab:
                     self.display_doc_output(result, "success")
             
         except Exception as e:
-            self.display_doc_output(f"❌ Lỗi: {str(e)}", "error")
+            self.display_doc_output(f" Lỗi: {str(e)}", "error")
         finally:
             self.check_files_running = False
-            self.check_files_btn.config(text="📁 Kiểm tra file", state=tk.NORMAL)
+            self.check_files_btn.config(text=" Kiểm tra file", state=tk.NORMAL)
 
     def check_selfcheck(self):
         """Check selfcheck files"""
@@ -522,17 +522,17 @@ class EslintAllTab:
             return
             
         if not hasattr(self, 'folder_path') or not self.folder_path:
-            self.display_selfcheck_output("❌ Vui lòng chọn folder chứa file selfcheck", "error")
+            self.display_selfcheck_output(" Vui lòng chọn folder chứa file selfcheck", "error")
             return
             
         screen_names = self.get_screen_names()
         if not screen_names:
-            self.display_selfcheck_output("❌ Vui lòng nhập tên các màn hình", "error")
+            self.display_selfcheck_output(" Vui lòng nhập tên các màn hình", "error")
             return
 
         self.selfcheck_running = True
         self.start_selfcheck_progress()
-        self.selfcheck_btn.config(text="⏳ Đang kiểm tra...", state=tk.DISABLED)
+        self.selfcheck_btn.config(text=" Đang kiểm tra...", state=tk.DISABLED)
         
         # Run in separate thread
         threading.Thread(target=self._check_selfcheck_thread, args=(screen_names,)).start()
@@ -554,7 +554,7 @@ class EslintAllTab:
             
             # Process each screen name
             for screen_name in screen_names:
-                self.display_selfcheck_output(f"🔍 Kiểm tra màn hình: {screen_name}", "info")
+                self.display_selfcheck_output(f" Kiểm tra màn hình: {screen_name}", "info")
                 
                 # Find files containing the screen name
                 found_files = []
@@ -566,11 +566,11 @@ class EslintAllTab:
                 # Check file count
                 screen_has_error = False
                 if len(found_files) == 0:
-                    self.display_selfcheck_output(f"❌ {screen_name}: Không tìm thấy file Excel", "error")
+                    self.display_selfcheck_output(f" {screen_name}: Không tìm thấy file Excel", "error")
                     screen_has_error = True
                     continue
                 elif len(found_files) > 1:
-                    self.display_selfcheck_output(f"❌ {screen_name}: Tìm thấy {len(found_files)} file (cần đúng 1 file)", "error")
+                    self.display_selfcheck_output(f" {screen_name}: Tìm thấy {len(found_files)} file (cần đúng 1 file)", "error")
                     for f in found_files:
                         self.display_selfcheck_output(f"   - {os.path.basename(f)}", "warning")
                     screen_has_error = True
@@ -579,7 +579,7 @@ class EslintAllTab:
                 # Process the single file found
                 excel_file = found_files[0]
                 file_name = os.path.basename(excel_file)
-                self.display_selfcheck_output(f"📁 {screen_name}: Đang xử lý {file_name}", "info")
+                self.display_selfcheck_output(f" {screen_name}: Đang xử lý {file_name}", "info")
                 
                 try:
                     # Read Excel file - sheet "機能別ソース一覧"
@@ -598,11 +598,11 @@ class EslintAllTab:
                             continue
                     
                     if not paths:
-                        self.display_selfcheck_output(f"⚠️ {screen_name}: Không tìm thấy path nào có cột D = '新規'", "warning")
+                        self.display_selfcheck_output(f" {screen_name}: Không tìm thấy path nào có cột D = '新規'", "warning")
                         screen_has_error = True
                         continue
                     
-                    self.display_selfcheck_output(f"📂 {screen_name}: Tìm thấy {len(paths)} path", "info")
+                    self.display_selfcheck_output(f" {screen_name}: Tìm thấy {len(paths)} path", "info")
                     
                     # Check if files exist
                     existing_count = 0
@@ -634,17 +634,17 @@ class EslintAllTab:
                         else:
                             missing_count += 1
                             total_missing_files += 1
-                            self.display_selfcheck_output(f"   ❌ Không tìm thấy: {path}", "error")
+                            self.display_selfcheck_output(f"    Không tìm thấy: {path}", "error")
                     
                     # Summary for this screen
                     if missing_count == 0:
-                        self.display_selfcheck_output(f"✅ {screen_name}: Tất cả {existing_count} file đều tồn tại", "success")
+                        self.display_selfcheck_output(f" {screen_name}: Tất cả {existing_count} file đều tồn tại", "success")
                     else:
-                        self.display_selfcheck_output(f"⚠️ {screen_name}: {existing_count} file tồn tại, {missing_count} file thiếu", "warning")
+                        self.display_selfcheck_output(f" {screen_name}: {existing_count} file tồn tại, {missing_count} file thiếu", "warning")
                         screen_has_error = True
                 
                 except Exception as e:
-                    self.display_selfcheck_output(f"❌ {screen_name}: Lỗi đọc Excel - {str(e)}", "error")
+                    self.display_selfcheck_output(f" {screen_name}: Lỗi đọc Excel - {str(e)}", "error")
                     screen_has_error = True
                 
                 # Count error screens
@@ -655,36 +655,36 @@ class EslintAllTab:
             
             # Display summary
             self.display_selfcheck_output("=" * 60, "info")
-            self.display_selfcheck_output("📊 TỔNG HỢP KẾT QUẢ:", "info")
+            self.display_selfcheck_output(" TỔNG HỢP KẾT QUẢ:", "info")
             self.display_selfcheck_output(f"📋 Tổng số màn hình kiểm tra: {len(screen_names)}", "info")
             
             if total_error_screens == 0:
-                self.display_selfcheck_output(f"✅ Tổng số màn hình lỗi: {total_error_screens}", "success")
+                self.display_selfcheck_output(f" Tổng số màn hình lỗi: {total_error_screens}", "success")
             else:
-                self.display_selfcheck_output(f"❌ Tổng số màn hình lỗi: {total_error_screens}", "error")
+                self.display_selfcheck_output(f" Tổng số màn hình lỗi: {total_error_screens}", "error")
             
             if total_missing_files == 0:
-                self.display_selfcheck_output(f"✅ Tổng số file path không tìm thấy: {total_missing_files}", "success")
+                self.display_selfcheck_output(f" Tổng số file path không tìm thấy: {total_missing_files}", "success")
             else:
-                self.display_selfcheck_output(f"❌ Tổng số file path không tìm thấy: {total_missing_files}", "error")
+                self.display_selfcheck_output(f" Tổng số file path không tìm thấy: {total_missing_files}", "error")
             
             self.display_selfcheck_output("=" * 60, "info")
             
             # Show ESLint file count info
             if self.valid_file_paths:
                 unique_eslint_files = len(set(self.valid_file_paths))
-                self.display_selfcheck_output(f"📂 Đã lưu {unique_eslint_files} file JS/TS/Vue hợp lệ để chạy ESLint", "info")
+                self.display_selfcheck_output(f" Đã lưu {unique_eslint_files} file JS/TS/Vue hợp lệ để chạy ESLint", "info")
             else:
-                self.display_selfcheck_output("ℹ️ Không có file JS/TS/Vue hợp lệ để chạy ESLint", "warning")
+                self.display_selfcheck_output(" Không có file JS/TS/Vue hợp lệ để chạy ESLint", "warning")
             
-            self.display_selfcheck_output("✅ Hoàn thành kiểm tra selfcheck", "success")
+            self.display_selfcheck_output(" Hoàn thành kiểm tra selfcheck", "success")
             
         except Exception as e:
-            self.display_selfcheck_output(f"❌ Lỗi tổng quát: {str(e)}", "error")
+            self.display_selfcheck_output(f" Lỗi tổng quát: {str(e)}", "error")
         finally:
             self.selfcheck_running = False
             self.stop_selfcheck_progress()
-            self.selfcheck_btn.config(text="🔍 Kiểm tra file selfcheck", state=tk.NORMAL)
+            self.selfcheck_btn.config(text=" Kiểm tra file selfcheck", state=tk.NORMAL)
 
     def check_eslint(self):
         """Check ESLint for valid files from selfcheck"""
@@ -692,12 +692,12 @@ class EslintAllTab:
             return
         
         if not self.valid_file_paths:
-            self.display_eslint_output("❌ Vui lòng chạy kiểm tra Selfcheck trước để lấy danh sách file hợp lệ", "error")
+            self.display_eslint_output(" Vui lòng chạy kiểm tra Selfcheck trước để lấy danh sách file hợp lệ", "error")
             return
 
         self.eslint_running = True
         self.start_eslint_progress()
-        self.eslint_btn.config(text="⏳ Đang kiểm tra...", state=tk.DISABLED)
+        self.eslint_btn.config(text=" Đang kiểm tra...", state=tk.DISABLED)
         
         # Run in separate thread
         threading.Thread(target=self._check_eslint_thread).start()
@@ -705,7 +705,7 @@ class EslintAllTab:
     def _check_eslint_thread(self):
         """Thread function for ESLint check using multithreading"""
         try:
-            self.display_eslint_output("🚀 Bắt đầu kiểm tra ESLint cho các file hợp lệ...\n", "info")
+            self.display_eslint_output(" Bắt đầu kiểm tra ESLint cho các file hợp lệ...\n", "info")
             
             # Prepare file list with screen mapping
             file_tasks = []
@@ -718,11 +718,11 @@ class EslintAllTab:
                     file_tasks.append((file_path, screen_name))
             
             total_files = len(file_tasks)
-            self.display_eslint_output(f"📁 Tìm thấy {total_files} file JS/TS/Vue từ Selfcheck để kiểm tra", "info")
+            self.display_eslint_output(f" Tìm thấy {total_files} file JS/TS/Vue từ Selfcheck để kiểm tra", "info")
             
             # Auto-detect optimal number of workers based on system specs
             max_workers = self._get_optimal_workers()
-            self.display_eslint_output(f"⏳ Đang chạy ESLint song song ({max_workers} luồng)...\n", "info")
+            self.display_eslint_output(f" Đang chạy ESLint song song ({max_workers} luồng)...\n", "info")
             
             # Run ESLint in parallel using ThreadPoolExecutor
             results = []
@@ -742,7 +742,7 @@ class EslintAllTab:
                     
                     # Update progress
                     with self.eslint_lock:
-                        self.display_eslint_output(f"⏳ Hoàn thành: {completed_count}/{total_files} file", "info")
+                        self.display_eslint_output(f" Hoàn thành: {completed_count}/{total_files} file", "info")
             
             # Group results by screen and display errors only
             screen_errors = {}
@@ -767,9 +767,9 @@ class EslintAllTab:
             self.display_eslint_output("\n" + "=" * 60, "info")
             
             if not screen_errors:
-                self.display_eslint_output("✅ TẤT CẢ FILE ĐỀU PASS ESLINT!", "success")
+                self.display_eslint_output(" TẤT CẢ FILE ĐỀU PASS ESLINT!", "success")
             else:
-                self.display_eslint_output("❌ CÁC MÀN HÌNH CÓ LỖI ESLINT:", "error")
+                self.display_eslint_output(" CÁC MÀN HÌNH CÓ LỖI ESLINT:", "error")
                 self.display_eslint_output("", "info")
                 
                 for screen_name in sorted(screen_errors.keys()):
@@ -792,26 +792,26 @@ class EslintAllTab:
                     self.display_eslint_output("", "info")
             
             # Summary
-            self.display_eslint_output("📊 TỔNG HỢP ESLINT:", "info")
+            self.display_eslint_output(" TỔNG HỢP ESLINT:", "info")
             self.display_eslint_output(f"📋 Tổng số file kiểm tra: {total_files}", "info")
             
             if total_error_files == 0:
-                self.display_eslint_output(f"✅ File có lỗi ESLint: {total_error_files}", "success")
+                self.display_eslint_output(f" File có lỗi ESLint: {total_error_files}", "success")
             else:
-                self.display_eslint_output(f"❌ File có lỗi ESLint: {total_error_files}", "error")
+                self.display_eslint_output(f" File có lỗi ESLint: {total_error_files}", "error")
             
             success_files = total_files - total_error_files
-            self.display_eslint_output(f"✅ File pass ESLint: {success_files}", "success")
+            self.display_eslint_output(f" File pass ESLint: {success_files}", "success")
             
             self.display_eslint_output("=" * 60, "info")
-            self.display_eslint_output("✅ Hoàn thành kiểm tra ESLint", "success")
+            self.display_eslint_output(" Hoàn thành kiểm tra ESLint", "success")
             
         except Exception as e:
-            self.display_eslint_output(f"❌ Lỗi: {str(e)}", "error")
+            self.display_eslint_output(f" Lỗi: {str(e)}", "error")
         finally:
             self.eslint_running = False
             self.stop_eslint_progress()
-            self.eslint_btn.config(text="🚀 Kiểm tra ESLint", state=tk.NORMAL)
+            self.eslint_btn.config(text=" Kiểm tra ESLint", state=tk.NORMAL)
 
     def _clean_display_path(self, path):
         """Clean up display path to remove unnecessary ..\ and show meaningful path"""

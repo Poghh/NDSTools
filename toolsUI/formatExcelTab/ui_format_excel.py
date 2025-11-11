@@ -15,7 +15,7 @@ class FormatExcelTab:
     def __init__(self, tab_parent):
         # Create regular tkinter frame for tab
         self.tab = tk.Frame(tab_parent, bg="#f5f7fa")
-        tab_parent.add(self.tab, text="📊 Format Excel")
+        tab_parent.add(self.tab, text="Format Excel")
         
         # State variables
         self.base_folder_path = ""
@@ -38,7 +38,7 @@ class FormatExcelTab:
         # Title and description
         ctk.CTkLabel(
             header_frame,
-            text="📊 Format Excel Files",
+            text=" Format Excel Files",
             font=ctk.CTkFont(size=18, weight="bold")
         ).grid(row=0, column=0, columnspan=2, padx=16, pady=(12, 4), sticky="w")
 
@@ -115,7 +115,7 @@ class FormatExcelTab:
 
         self.select_folder_btn = ctk.CTkButton(
             folder_frame,
-            text="📁 Chọn Folder",
+            text=" Chọn Folder",
             font=ctk.CTkFont(size=12, weight="bold"),
             width=120,
             command=self.select_base_folder
@@ -153,7 +153,7 @@ class FormatExcelTab:
 
         self.process_btn = ctk.CTkButton(
             button_frame,
-            text="🚀 Bắt Đầu Format",
+            text=" Bắt Đầu Format",
             font=ctk.CTkFont(size=14, weight="bold"),
             width=200,
             height=40,
@@ -163,7 +163,7 @@ class FormatExcelTab:
 
         self.clear_btn = ctk.CTkButton(
             button_frame,
-            text="🗑️ Xóa Log",
+            text=" Xóa Log",
             font=ctk.CTkFont(size=12),
             width=100,
             height=40,
@@ -200,7 +200,7 @@ class FormatExcelTab:
 
         # Initial message
         self.output_text.insert(tk.END, "💡 Sẵn sàng format Excel files...\n")
-        self.output_text.insert(tk.END, "📝 Nhập danh sách màn hình và chọn folder để bắt đầu.\n\n")
+        self.output_text.insert(tk.END, " Nhập danh sách màn hình và chọn folder để bắt đầu.\n\n")
 
     def on_screen_text_focus_in(self, event):
         """Xử lý khi focus vào text area"""
@@ -226,11 +226,11 @@ class FormatExcelTab:
             # Hiển thị tên folder (không hiển thị đường dẫn đầy đủ để gọn)
             folder_name = os.path.basename(folder_path)
             self.folder_label.configure(
-                text=f"📁 {folder_name}",
+                text=f" {folder_name}",
                 text_color="blue"
             )
             
-            self.append_output(f"📁 Đã chọn folder: {folder_path}\n")
+            self.append_output(f" Đã chọn folder: {folder_path}\n")
 
     def start_processing(self):
         """Bắt đầu xử lý format Excel"""
@@ -252,7 +252,7 @@ class FormatExcelTab:
         # Confirm action
         if self.xlwings_available:
             method_msg = "xlwings -  linked objects"
-            confirm_msg = f"Sẽ xử lý {len(screen_list)} màn hình trong folder:\n{self.base_folder_path}\n\n✅  {method_msg}\n\nTiếp tục?"
+            confirm_msg = f"Sẽ xử lý {len(screen_list)} màn hình trong folder:\n{self.base_folder_path}\n\n  {method_msg}\n\nTiếp tục?"
         else:
             force_msg = "BẬT (có thể mất linked objects)" if force_format else "TẮT (bỏ qua file có objects)"
             confirm_msg = f"Sẽ xử lý {len(screen_list)} màn hình trong folder:\n{self.base_folder_path}\n\n🚨 Force Format: {force_msg}\n\nTiếp tục?"
@@ -262,15 +262,15 @@ class FormatExcelTab:
 
         # Start processing in background thread
         self.processing = True
-        self.process_btn.configure(text="⏳ Đang xử lý...", state="disabled")
+        self.process_btn.configure(text=" Đang xử lý...", state="disabled")
         
         self.append_output(f"\n{'='*60}\n")
-        self.append_output(f"🚀 Bắt đầu xử lý {len(screen_list)} màn hình...\n")
-        self.append_output(f"📁 Folder gốc: {self.base_folder_path}\n")
+        self.append_output(f" Bắt đầu xử lý {len(screen_list)} màn hình...\n")
+        self.append_output(f" Folder gốc: {self.base_folder_path}\n")
         self.append_output(f"📋 Danh sách màn hình: {', '.join(screen_list)}\n")
         
         if self.xlwings_available:
-            self.append_output(f"✅  xlwings -  linked objects\n")
+            self.append_output(f"  xlwings -  linked objects\n")
         else:
             force_msg = "BẬT (có thể mất linked objects)" if force_format else "TẮT (bỏ qua file có objects)"
             self.append_output(f"🚨 Force Format: {force_msg}\n")
@@ -302,14 +302,14 @@ class FormatExcelTab:
             
             self.append_output(f"\n{'='*60}\n")
             self.append_output(f"🎉 HOÀN THÀNH!\n")
-            self.append_output(f"📊 Tổng kết:\n")
-            self.append_output(f"  ✅ Thành công: {total_success} file\n")
-            self.append_output(f"  ❌ Lỗi: {total_error} file\n")
-            self.append_output(f"  📂 Folder xử lý: {len(results)}\n")
+            self.append_output(f" Tổng kết:\n")
+            self.append_output(f"   Thành công: {total_success} file\n")
+            self.append_output(f"   Lỗi: {total_error} file\n")
+            self.append_output(f"   Folder xử lý: {len(results)}\n")
             self.append_output(f"{'='*60}\n")
             
         except Exception as e:
-            self.append_output(f"\n❌ Lỗi không mong muốn: {str(e)}\n")
+            self.append_output(f"\n Lỗi không mong muốn: {str(e)}\n")
         
         finally:
             # Reset UI state
@@ -318,7 +318,7 @@ class FormatExcelTab:
     def reset_ui_state(self):
         """Reset UI về trạng thái ban đầu"""
         self.processing = False
-        self.process_btn.configure(text="🚀 Bắt Đầu Format", state="normal")
+        self.process_btn.configure(text=" Bắt Đầu Format", state="normal")
 
     def append_output(self, text):
         """Thêm text vào output area (thread-safe)"""

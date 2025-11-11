@@ -29,12 +29,12 @@ def process_selfcheck_excel(
     author_entry: str,
 ):
     if not file_path:
-        label_widget.config(text="❌ Không có file nào được chọn", fg="red")
+        label_widget.config(text=" Không có file nào được chọn", fg="red")
         listbox_widget.delete(0, tk.END)
         return
 
     file_name = os.path.basename(file_path)
-    label_widget.config(text=f"📁 {file_name}", fg="green")
+    label_widget.config(text=f" {file_name}", fg="green")
     listbox_widget.delete(0, tk.END)
 
     if "_" in file_name and isinstance(screen_code_entry, tk.Entry):
@@ -50,7 +50,7 @@ def process_selfcheck_excel(
     try:
         workbook = pd.read_excel(file_path, sheet_name="機能別ソース一覧", header=None)
     except Exception as e:
-        listbox_widget.insert(tk.END, f"❌ Lỗi đọc sheet 機能別ソース一覧: {str(e)}")
+        listbox_widget.insert(tk.END, f" Lỗi đọc sheet 機能別ソース一覧: {str(e)}")
         return
 
     result = []
@@ -70,7 +70,7 @@ def process_selfcheck_excel(
             result.append(str(row[2]).strip())
 
     if not result:
-        listbox_widget.insert(tk.END, "⚠️ Không tìm thấy dòng nào có trạng thái '新規'")
+        listbox_widget.insert(tk.END, " Không tìm thấy dòng nào có trạng thái '新規'")
     else:
         for path in result:
             listbox_widget.insert(tk.END, path)

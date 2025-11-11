@@ -3,7 +3,7 @@ import tkinter as tk
 
 def display_output(self, text):
     for line in text.splitlines():
-        tag = "error" if any(keyword in line.lower() for keyword in ["error", "✖", "❌"]) else None
+        tag = "error" if any(keyword in line.lower() for keyword in ["error", "", ""]) else None
         self.output_text.insert(tk.END, line + "\n", tag)
 
 
@@ -27,4 +27,4 @@ def set_running_state(self, running: bool):
     self.check_hardcode_button.config(state=state)
     self.check_console_button.config(state=state)
     self.check_jsdoc_button.config(state=state)
-    self.status_label.config(text="⏳ Đang xử lý..." if running else "✅ Sẵn sàng.")
+    self.status_label.config(text=" Đang xử lý..." if running else " Sẵn sàng.")

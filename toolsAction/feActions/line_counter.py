@@ -16,9 +16,9 @@ def count_lines(self):
 
     for file_path in files:
         full_path = os.path.abspath(file_path.replace("\\", "/"))
-        self.output_text.insert(tk.END, f"\n📄 Đếm dòng: {file_path}\n")
+        self.output_text.insert(tk.END, f"\n Đếm dòng: {file_path}\n")
         if not os.path.exists(full_path):
-            self.output_text.insert(tk.END, f"❌ Không tìm thấy file: {file_path}\n", "error")
+            self.output_text.insert(tk.END, f" Không tìm thấy file: {file_path}\n", "error")
             continue
 
         try:
@@ -42,18 +42,18 @@ def count_lines(self):
             total_comment += comment_count
             total_blank += blank_count
             self.output_text.insert(
-                tk.END, f"➡️ {code_count} dòng code, {blank_count} dòng trắng, {comment_count} dòng comment\n"
+                tk.END, f" {code_count} dòng code, {blank_count} dòng trắng, {comment_count} dòng comment\n"
             )
 
         except Exception as e:
-            self.output_text.insert(tk.END, f"⚠️ Lỗi đọc file: {str(e)}\n", "error")
+            self.output_text.insert(tk.END, f" Lỗi đọc file: {str(e)}\n", "error")
 
     self.output_text.insert(
-        tk.END, f"\n📊 TỔNG: {total_code} dòng code, {total_blank} dòng trắng, {total_comment} dòng comment\n"
+        tk.END, f"\n TỔNG: {total_code} dòng code, {total_blank} dòng trắng, {total_comment} dòng comment\n"
     )
     self.output_text.insert(
         tk.END,
-        f"\n📊 TỔNG thêm các file chung: {round(total_code * 1.03)} dòng code, {total_blank} dòng trắng, {round(total_comment * 1.006)} dòng comment\n",
+        f"\n TỔNG thêm các file chung: {round(total_code * 1.03)} dòng code, {total_blank} dòng trắng, {round(total_comment * 1.006)} dòng comment\n",
     )
-    self.output_text.insert(tk.END, "\n✅ Đếm dòng hoàn tất.\n")
+    self.output_text.insert(tk.END, "\n Đếm dòng hoàn tất.\n")
     self.set_running_state(False)

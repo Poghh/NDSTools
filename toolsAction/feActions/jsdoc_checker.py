@@ -119,7 +119,7 @@ def check_jsdoc(self):
             continue
 
         if not os.path.exists(file_path):
-            self.output_text.insert(tk.END, f"❌ Không tìm thấy file: {file_path}\n", "error")
+            self.output_text.insert(tk.END, f" Không tìm thấy file: {file_path}\n", "error")
             continue
 
         error_count = 0
@@ -244,5 +244,5 @@ def check_jsdoc(self):
         for message in error_messages:
             self.output_text.insert(tk.END, message)
 
-    self.output_text.insert(tk.END, "\n✅ Kiểm tra comment hoàn tất.\n")
+    self.output_text.insert(tk.END, "\n Kiểm tra comment hoàn tất.\n")
     self.set_running_state(False)

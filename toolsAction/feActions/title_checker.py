@@ -13,23 +13,23 @@ def check_title_comment(self):
     author_name = self.author_entry.get().strip()
     if not author_name:
         self.output_text.insert(
-            tk.END, "❌ Vui lòng nhập tên tác giả trước khi kiểm tra comment.\n", "error"
+            tk.END, " Vui lòng nhập tên tác giả trước khi kiểm tra comment.\n", "error"
         )
         self.set_running_state(False)
         return
 
     excel_data = self.excel_output.get("1.0", tk.END).strip().splitlines()
     if not excel_data:
-        self.output_text.insert(tk.END, "❌ Không tìm thấy dữ liệu từ Excel.\n", "error")
+        self.output_text.insert(tk.END, " Không tìm thấy dữ liệu từ Excel.\n", "error")
         self.set_running_state(False)
         return
 
     component_map = {}
     gui_code = ""
     for line in excel_data:
-        if line.startswith("🔹"):
+        if line.startswith(""):
             try:
-                code, name = line.replace("🔹", "").strip().split(" - ", 1)
+                code, name = line.replace("", "").strip().split(" - ", 1)
                 component_map[code] = name
                 if code.startswith("GUI"):
                     gui_code = code
@@ -42,7 +42,7 @@ def check_title_comment(self):
         file_name = os.path.basename(file_path)
         if not gui_name:
             self.output_text.insert(
-                tk.END, f"⚠️ {file_name}: Không tìm thấy tên màn hình từ Excel\n", "error"
+                tk.END, f" {file_name}: Không tìm thấy tên màn hình từ Excel\n", "error"
             )
 
         if file_name.startswith("GUI") and file_name.endswith(".vue"):
@@ -69,10 +69,10 @@ def check_title_comment(self):
             )
         else:
             self.output_text.insert(
-                tk.END, f"❌ {file_name}: Không phải file cần kiểm tra\n", "warning"
+                tk.END, f" {file_name}: Không phải file cần kiểm tra\n", "warning"
             )
 
-    self.output_text.insert(tk.END, "\n✅ Kiểm tra hoàn tất.\n")
+    self.output_text.insert(tk.END, "\n Kiểm tra hoàn tất.\n")
     self.set_running_state(False)
 
 
@@ -94,14 +94,14 @@ def check_gui_file(self, file_path, file_name, gui_code, gui_name, author_name):
             self, file_path, file_name, content, expected, gui_code, gui_name, author_name
         )
     except Exception as e:
-        self.output_text.insert(tk.END, f"❌ {file_name}: Lỗi đọc file - {str(e)}\n", "error")
+        self.output_text.insert(tk.END, f" {file_name}: Lỗi đọc file - {str(e)}\n", "error")
 
 
 def check_or_file(self, file_path, file_name, gui_code, gui_name, author_name, component_map):
     or_code = file_name.replace(".vue", "")
     if or_code not in component_map:
         self.output_text.insert(
-            tk.END, f"❌ {file_name}: Không tìm thấy tên component từ Excel\n", "error"
+            tk.END, f" {file_name}: Không tìm thấy tên component từ Excel\n", "error"
         )
     else:
         or_name = component_map[or_code]
@@ -132,7 +132,7 @@ def check_or_file(self, file_path, file_name, gui_code, gui_name, author_name, c
                 or_name,
             )
         except Exception as e:
-            self.output_text.insert(tk.END, f"❌ {file_name}: Lỗi đọc file - {str(e)}\n", "error")
+            self.output_text.insert(tk.END, f" {file_name}: Lỗi đọc file - {str(e)}\n", "error")
 
 
 def check_constants_file(
@@ -141,7 +141,7 @@ def check_constants_file(
     or_code = file_name.replace(".constants.ts", "")
     if or_code not in component_map:
         self.output_text.insert(
-            tk.END, f"❌ {file_name}: Không tìm thấy tên component từ Excel\n", "error"
+            tk.END, f" {file_name}: Không tìm thấy tên component từ Excel\n", "error"
         )
     else:
         or_name = component_map[or_code]
@@ -173,14 +173,14 @@ def check_constants_file(
                 "静的データ",
             )
         except Exception as e:
-            self.output_text.insert(tk.END, f"❌ {file_name}: Lỗi đọc file - {str(e)}\n", "error")
+            self.output_text.insert(tk.END, f" {file_name}: Lỗi đọc file - {str(e)}\n", "error")
 
 
 def check_logic_file(self, file_path, file_name, gui_code, gui_name, author_name, component_map):
     or_code = file_name.replace(".logic.ts", "")
     if or_code not in component_map:
         self.output_text.insert(
-            tk.END, f"❌ {file_name}: Không tìm thấy tên component từ Excel\n", "error"
+            tk.END, f" {file_name}: Không tìm thấy tên component từ Excel\n", "error"
         )
     else:
         or_name = component_map[or_code]
@@ -212,14 +212,14 @@ def check_logic_file(self, file_path, file_name, gui_code, gui_name, author_name
                 "処理ロジック",
             )
         except Exception as e:
-            self.output_text.insert(tk.END, f"❌ {file_name}: Lỗi đọc file - {str(e)}\n", "error")
+            self.output_text.insert(tk.END, f" {file_name}: Lỗi đọc file - {str(e)}\n", "error")
 
 
 def check_type_file(self, file_path, file_name, gui_code, gui_name, author_name, component_map):
     or_code = file_name.replace(".type.d.ts", "")
     if or_code not in component_map:
         self.output_text.insert(
-            tk.END, f"❌ {file_name}: Không tìm thấy tên component từ Excel\n", "error"
+            tk.END, f" {file_name}: Không tìm thấy tên component từ Excel\n", "error"
         )
     else:
         or_name = component_map[or_code]
@@ -251,14 +251,14 @@ def check_type_file(self, file_path, file_name, gui_code, gui_name, author_name,
                 "OneWayBind領域用の構造",
             )
         except Exception as e:
-            self.output_text.insert(tk.END, f"❌ {file_name}: Lỗi đọc file - {str(e)}\n", "error")
+            self.output_text.insert(tk.END, f" {file_name}: Lỗi đọc file - {str(e)}\n", "error")
 
 
 def check_type_2_file(self, file_path, file_name, gui_code, gui_name, author_name, component_map):
     or_code = file_name.replace("Type.d.ts", "")
     if or_code not in component_map:
         self.output_text.insert(
-            tk.END, f"❌ {file_name}: Không tìm thấy tên component từ Excel\n", "error"
+            tk.END, f" {file_name}: Không tìm thấy tên component từ Excel\n", "error"
         )
     else:
         or_name = component_map[or_code]
@@ -290,7 +290,7 @@ def check_type_2_file(self, file_path, file_name, gui_code, gui_name, author_nam
                 "双方向バインドのデータ構造",
             )
         except Exception as e:
-            self.output_text.insert(tk.END, f"❌ {file_name}: Lỗi đọc file - {str(e)}\n", "error")
+            self.output_text.insert(tk.END, f" {file_name}: Lỗi đọc file - {str(e)}\n", "error")
 
 
 def check_file_content(
@@ -307,14 +307,14 @@ def check_file_content(
     description=None,
 ):
     if expected not in content:
-        self.output_text.insert(tk.END, f"❌ {file_name}:\n", "error")
+        self.output_text.insert(tk.END, f" {file_name}:\n", "error")
 
-        self.output_text.insert(tk.END, "🔍 Mong muốn:\n", "highlight")
+        self.output_text.insert(tk.END, " Mong muốn:\n", "highlight")
         self.output_text.insert(tk.END, f"{expected}\n")
 
         lines12 = content.splitlines()[:12]
-        self.output_text.insert(tk.END, "🔍 Code:\n", "highlight")
+        self.output_text.insert(tk.END, " Code:\n", "highlight")
         self.output_text.insert(tk.END, f"{'\n'.join(lines12)}\n")
         self.output_text.insert(tk.END, "\n")
     else:
-        self.output_text.insert(tk.END, f"✅ {file_name}: Đúng định dạng\n", "success")
+        self.output_text.insert(tk.END, f" {file_name}: Đúng định dạng\n", "success")
