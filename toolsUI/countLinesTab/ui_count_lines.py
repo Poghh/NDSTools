@@ -14,7 +14,8 @@ class CountLinesTab:
         
         self.folder_path = ""
         self.running = False
-        self.results_data = []  # Lưu kết quả để export excel
+        self.results_data = []  # Lưu kết quả tổng hợp màn hình để export excel
+        self.file_details_data = []  # Lưu chi tiết từng file để export excel
         
         self.init_ui()
 
@@ -120,6 +121,21 @@ class CountLinesTab:
         except (AttributeError, Exception):
             pass
 
+        # Option checkbox
+        option_frame = tk.Frame(input_frame, bg="#e3eafc")
+        option_frame.pack(fill="x", pady=(12, 0))
+
+        self.show_details_var = tk.BooleanVar(value=True)  # Mặc định là chi tiết
+        self.show_details_checkbox = tk.Checkbutton(
+            option_frame,
+            text="Hiển thị chi tiết từng file",
+            variable=self.show_details_var,
+            bg="#e3eafc",
+            font=("Segoe UI", 10),
+            activebackground="#e3eafc",
+        )
+        self.show_details_checkbox.pack(side=tk.LEFT)
+
         # Buttons section
         button_frame = tk.Frame(main_frame, bg="#f5f7fa")
         button_frame.pack(fill="x", pady=(0, 16))
@@ -220,6 +236,7 @@ class CountLinesTab:
         self.folder_path = ""
         self.folder_label.config(text="Chưa chọn folder", fg="gray")
         self.results_data = []
+        self.file_details_data = []
 
     def start_count_lines(self):
         if self.running:
@@ -257,6 +274,7 @@ class CountLinesTab:
 
         # Reset results data
         self.results_data = []
+        self.file_details_data = []
 
         for screen_name in screen_names:
             self.output_text.insert(tk.END, f"\n{'='*60}\n")
@@ -296,20 +314,47 @@ class CountLinesTab:
                 })
                 continue
 
-            self.output_text.insert(tk.END, f"Tìm thấy {len(file_paths)} file\n\n")
+            self.output_text.insert(tk.END, f"Tìm thấy {len(file_paths)} file\n")
+
+            # Kiểm tra xem có hiển thị chi tiết không
+            show_details = self.show_details_var.get()
 
             # Đếm dòng từ các file
             screen_code = 0
             screen_blank = 0
             screen_comment = 0
 
+            # Chi tiết từng file
             for file_path in file_paths:
                 code, blank, comment = self.count_file_lines(file_path)
                 screen_code += code
                 screen_blank += blank
                 screen_comment += comment
 
-            # Lưu kết quả
+                # Lưu chi tiết từng file (luôn lưu để export Excel)
+                file_name = os.path.basename(file_path) if os.path.exists(file_path) else file_path
+                self.file_details_data.append({
+                    "Màn hình": screen_name,
+                    "File path": file_path,
+                    "Tên file": file_name,
+                    "Dòng code": code,
+                    "Dòng trắng": blank,
+                    "Dòng comment": comment,
+                })
+
+                # Hiển thị chi tiết từng file (chỉ khi checkbox được chọn)
+                if show_details:
+                    self.output_text.insert(
+                        tk.END,
+                        f"  {file_name}: {code} dòng code, {blank} dòng trắng, {comment} dòng comment\n"
+                    )
+                    self.output_text.update()
+
+            # Thêm dòng trống nếu không hiển thị chi tiết
+            if not show_details:
+                self.output_text.insert(tk.END, "\n")
+
+            # Lưu kết quả tổng hợp
             self.results_data.append({
                 "Màn hình": screen_name,
                 "File self-check": excel_filename,
@@ -321,7 +366,7 @@ class CountLinesTab:
 
             self.output_text.insert(
                 tk.END,
-                f"{screen_name}: {screen_code} dòng code, {screen_blank} dòng trắng, {screen_comment} dòng comment\n"
+                f"\n{screen_name}: {screen_code} dòng code, {screen_blank} dòng trắng, {screen_comment} dòng comment\n"
             )
             self.output_text.update()
 
@@ -410,19 +455,89 @@ class CountLinesTab:
             return
 
         try:
-            # Tạo DataFrame từ kết quả
-            df = pd.DataFrame(self.results_data)
+            # Tạo DataFrame từ kết quả tổng hợp
+            df_summary = pd.DataFrame(self.results_data)
 
             # Ghi ra Excel
             with pd.ExcelWriter(file_path, engine="openpyxl") as writer:
-                df.to_excel(writer, sheet_name="Kết quả đếm dòng", index=False)
+                # Sheet tổng hợp
+                df_summary.to_excel(writer, sheet_name="Tổng hợp màn hình", index=False)
 
-                # Format cột
-                worksheet = writer.sheets["Kết quả đếm dòng"]
+                # Sheet chi tiết từng file (nếu có)
+                if self.file_details_data:
+                    df_details = pd.DataFrame(self.file_details_data)
+                    df_details.to_excel(writer, sheet_name="Chi tiết từng file", index=False)
+
+                # Format cột cho sheet tổng hợp
                 from openpyxl.utils import get_column_letter
-                for idx, col in enumerate(df.columns, 1):
+                worksheet_summary = writer.sheets["Tổng hợp màn hình"]
+                for idx, col in enumerate(df_summary.columns, 1):
                     col_letter = get_column_letter(idx)
-                    worksheet.column_dimensions[col_letter].width = 30
+                    worksheet_summary.column_dimensions[col_letter].width = 30
+
+                # Format cột cho sheet chi tiết (nếu có)
+                if self.file_details_data:
+                    df_details = pd.DataFrame(self.file_details_data)
+                    worksheet_details = writer.sheets["Chi tiết từng file"]
+                    
+                    # Format độ rộng cột
+                    for idx, col in enumerate(df_details.columns, 1):
+                        col_letter = get_column_letter(idx)
+                        if col == "File path":
+                            worksheet_details.column_dimensions[col_letter].width = 50
+                        else:
+                            worksheet_details.column_dimensions[col_letter].width = 30
+                    
+                    # Merge cột "Màn hình" khi có cùng giá trị
+                    from openpyxl.styles import Alignment, Border, Side
+                    screen_col_idx = df_details.columns.get_loc("Màn hình") + 1  # +1 vì Excel bắt đầu từ 1
+                    screen_col_letter = get_column_letter(screen_col_idx)
+                    
+                    current_screen = None
+                    start_row = 2  # Bắt đầu từ dòng 2 (dòng 1 là header)
+                    
+                    for row_idx, (_, row) in enumerate(df_details.iterrows(), start=0):
+                        screen = row["Màn hình"]
+                        excel_row = row_idx + 2  # +2 vì Excel bắt đầu từ 1 và có header
+                        
+                        if current_screen != screen:
+                            # Nếu có nhóm trước đó, merge nó
+                            if current_screen is not None and start_row < excel_row:
+                                worksheet_details.merge_cells(
+                                    f"{screen_col_letter}{start_row}:{screen_col_letter}{excel_row - 1}"
+                                )
+                                # Căn giữa cho cell đã merge
+                                cell = worksheet_details[f"{screen_col_letter}{start_row}"]
+                                cell.alignment = Alignment(horizontal="center", vertical="center")
+                                # Thêm border
+                                thin_border = Border(
+                                    left=Side(style='thin'),
+                                    right=Side(style='thin'),
+                                    top=Side(style='thin'),
+                                    bottom=Side(style='thin')
+                                )
+                                cell.border = thin_border
+                            
+                            # Bắt đầu nhóm mới
+                            current_screen = screen
+                            start_row = excel_row
+                    
+                    # Merge nhóm cuối cùng
+                    if current_screen is not None:
+                        end_row = len(df_details) + 1
+                        if start_row < end_row:
+                            worksheet_details.merge_cells(
+                                f"{screen_col_letter}{start_row}:{screen_col_letter}{end_row}"
+                            )
+                            cell = worksheet_details[f"{screen_col_letter}{start_row}"]
+                            cell.alignment = Alignment(horizontal="center", vertical="center")
+                            thin_border = Border(
+                                left=Side(style='thin'),
+                                right=Side(style='thin'),
+                                top=Side(style='thin'),
+                                bottom=Side(style='thin')
+                            )
+                            cell.border = thin_border
 
             self.output_text.insert(tk.END, f"\nĐã export kết quả ra file: {file_path}\n")
         except Exception as e:
