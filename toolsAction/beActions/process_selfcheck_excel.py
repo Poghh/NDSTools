@@ -27,15 +27,19 @@ def process_selfcheck_excel(
     listbox_widget: tk.Listbox,
     screen_code_entry: str,
     author_entry: str,
+    clear_listbox=True,
 ):
     if not file_path:
         label_widget.config(text=" Không có file nào được chọn", fg="red")
-        listbox_widget.delete(0, tk.END)
+        if clear_listbox:
+            listbox_widget.delete(0, tk.END)
         return
 
     file_name = os.path.basename(file_path)
     label_widget.config(text=f" {file_name}", fg="green")
-    listbox_widget.delete(0, tk.END)
+
+    if clear_listbox:
+        listbox_widget.delete(0, tk.END)
 
     if "_" in file_name and isinstance(screen_code_entry, tk.Entry):
         parts = file_name.split("_")
