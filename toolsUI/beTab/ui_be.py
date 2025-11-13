@@ -1,220 +1,238 @@
 import os
 import re
 import tkinter as tk
-from tkinter import filedialog, messagebox, scrolledtext
+from tkinter import filedialog, messagebox, scrolledtext, ttk
 
 import pandas as pd
 from openpyxl import load_workbook
 from openpyxl.styles import Alignment, Border, Font, PatternFill, Side
 from openpyxl.utils import get_column_letter
-from tkcalendar import DateEntry
 
-from toolsAction.beActions.comment_generator import generate_comment
 from toolsAction.beActions.count_code import count_code
-from toolsAction.beActions.create_java_dto_class import generated_dto
 from toolsAction.beActions.process_selfcheck_excel import (
     process_selfcheck_excel,
-    select_self_check_file,
 )
-from toolsAction.beActions.run_database_initialization import (
-    run_database_initialization,
-)
-from toolsAction.beActions.run_sql_folder import run_sql_from_folder
-from toolsAction.beActions.select_file import select_file
 from toolsUI.beTab.unit_test_generater_dialog import UnitTestDialog
+
+from .subTabs.comment_and_unit_test_tab import CommentAndUnitTestTab
+from .subTabs.dto_and_db_tab import DtoAndDbTab
+from .subTabs.self_check_tab import SelfCheckTab
+
+PRIMARY_COLOR = "#2563eb"  # xanh primary
+PRIMARY_DARK = "#1d4ed8"
+SIDEBAR_BG = "#111827"
+TEXT_MUTED = "#6b7280"
+APP_BG = "#f3f4f6"
 
 
 class BackEndTab:
     def __init__(self, parent):
-        self.tab = tk.Frame(parent)
+        self.tab = tk.Frame(parent, bg=APP_BG)
         parent.add(self.tab, text="Back-End")
+
+        # style dùng trong build_selfcheck_frame (lookup background)
+        self.style = ttk.Style()
+
         self.build_ui()
 
     def build_ui(self):
-        # === Cấu hình bố cục chính cho self.tab ===
-        self.tab.columnconfigure(0, weight=1)
-        self.tab.columnconfigure(1, weight=3)
+        # === LAYOUT CHÍNH CỦA TAB: sidebar (col 0) + content (col 1) ===
+        self.tab.columnconfigure(0, weight=0)  # sidebar
+        self.tab.columnconfigure(1, weight=1)  # nội dung chính
         self.tab.rowconfigure(0, weight=1)
 
-        # === FRAME TRÁI ===
-        frame_input = tk.Frame(self.tab, bg="lightgray")
-        frame_input.grid(row=0, column=0, sticky="nswe", padx=10, pady=10)
-        frame_input.columnconfigure(0, weight=1)
-
-        # === FRAME PHẢI ===
-        frame_output = tk.Frame(self.tab)
-        frame_output.grid(row=0, column=1, sticky="nsew", padx=10, pady=10)
-        frame_output.rowconfigure(0, weight=1)
-        frame_output.columnconfigure(0, weight=1)
-
-        # === [1] SELF CHECK === (được đưa lên đầu tiên)
-        helper_frame = tk.LabelFrame(frame_input, text=" Self Check", bg="lightgray")
-        helper_frame.grid(row=0, column=0, sticky="nsew", pady=(0, 10))
-
-        self.self_check_path = None
-        self.self_check_label = tk.Label(
-            helper_frame, text="Chưa chọn file", bg="lightgray", font=("Arial", 8)
-        )
-        self.self_check_label.pack(pady=(2, 0), anchor="center")
+        # ===================== SIDEBAR BÊN TRÁI =====================
+        sidebar = tk.Frame(self.tab, bg=SIDEBAR_BG)
+        sidebar.grid(row=0, column=0, sticky="nsw")
+        sidebar.rowconfigure(99, weight=1)  # đẩy khoảng trống xuống dưới
 
         tk.Label(
-            helper_frame,
-            text="— Dán danh sách mã màn hình (mỗi dòng 1 mã) —",
-            bg="lightgray",
-            font=("Arial", 8, "italic"),
-        ).pack(anchor="center", pady=(8, 2))
+            sidebar,
+            text="Menu",
+            bg=SIDEBAR_BG,
+            fg="#e5e7eb",
+            font=("Segoe UI", 10, "bold"),
+        ).pack(anchor="w", pady=(10, 6), padx=10)
 
-        paste_frame = tk.Frame(helper_frame, bg="lightgray")
-        paste_frame.pack(padx=5, pady=2, fill=tk.BOTH, expand=True)
+        self.workflow_var = tk.StringVar(value="selfcheck")
 
-        # Text để dán list mã
-        text_scroller_x = tk.Scrollbar(paste_frame, orient=tk.HORIZONTAL)
-        text_scroller_x.pack(side=tk.BOTTOM, fill=tk.X)
+        def make_side_btn(text, name):
+            return tk.Button(
+                sidebar,
+                text=text,
+                anchor="w",
+                bd=0,
+                relief="flat",
+                bg=SIDEBAR_BG,
+                fg="#e5e7eb",
+                activebackground=PRIMARY_DARK,
+                activeforeground="#ffffff",
+                padx=14,
+                pady=8,
+                font=("Segoe UI", 9),
+                highlightthickness=0,
+                # -> gọi show_workflow, trong đó tự đổi màu sidebar
+                command=lambda: self.show_workflow(name),
+            )
 
-        self.screen_codes_text = tk.Text(
-            paste_frame, height=6, wrap="none", xscrollcommand=text_scroller_x.set
-        )
-        self.screen_codes_text.pack(side=tk.LEFT, fill=tk.BOTH, expand=True)
-        text_scroller_x.config(command=self.screen_codes_text.xview)
+        self.btn_sc = make_side_btn("🧾  Self Check", "selfcheck")
+        self.btn_sc.pack(fill="x")
 
-        codes_listbox_frame = tk.Frame(helper_frame)
-        codes_listbox_frame.pack(padx=5, pady=2, fill=tk.BOTH, expand=True)
+        self.btn_cm = make_side_btn("📝  Comment & Unit Test", "comment")
+        self.btn_cm.pack(fill="x")
 
-        # nơi giữ danh sách mã để dùng tiếp (nếu cần)
-        self.screen_codes = []
-
-        tk.Button(
-            helper_frame,
-            text="Chọn thư mục Self Check",
-            command=self.select_self_check_folder,
-            width=25,
-        ).pack(pady=2, anchor="center")
-
-        tk.Button(
-            helper_frame,
-            text="Tải File Self Check",
-            command=lambda: select_self_check_file(self),
-            width=25,
-        ).pack(pady=2, anchor="center")
-
-        tk.Button(
-            helper_frame,
-            text="Đếm dòng code từ Self Check",
-            command=lambda: count_code(self.file_listbox, self.output_text),
-        ).pack(pady=2, anchor="center")
-
-        tk.Button(
-            helper_frame,
-            text="Xuất báo cáo (CSV/Excel)",
-            command=self.export_selfcheck_report,
-            width=25,
-        ).pack(pady=2, anchor="center")
+        self.btn_dev = make_side_btn("🛠  DTO & DB Tools", "devtools")
+        self.btn_dev.pack(fill="x")
 
         tk.Label(
-            helper_frame,
-            text="Danh sách file đã load:",
-            bg="lightgray",
-            font=("Arial", 8),
-        ).pack(anchor="w", padx=5, pady=(5, 0))
+            sidebar,
+            text="Review Tool v2.0",
+            bg=SIDEBAR_BG,
+            fg=TEXT_MUTED,
+            font=("Segoe UI", 8),
+        ).pack(anchor="w", pady=(10, 4), padx=12, side="bottom")
 
-        listbox_frame = tk.Frame(helper_frame)
-        listbox_frame.pack(padx=5, pady=2, fill=tk.BOTH, expand=True)
+        # ===================== CONTENT BÊN PHẢI =====================
+        # giống ui_demo: main -> container_card (workflow) + notebook_card (kết quả)
+        main = ttk.Frame(self.tab, style="TFrame")
+        main.grid(row=0, column=1, sticky="nsew", padx=10, pady=10)
+        main.rowconfigure(0, weight=0)  # workflow (trên)
+        main.rowconfigure(1, weight=1)  # notebook (dưới)
+        main.columnconfigure(0, weight=1)
 
-        x_scrollbar = tk.Scrollbar(listbox_frame, orient=tk.HORIZONTAL)
-        x_scrollbar.pack(side=tk.BOTTOM, fill=tk.X)
+        # --- Card chứa các workflow frame ---
+        container_card = ttk.Frame(main, style="Card.TFrame")
+        container_card.grid(row=0, column=0, sticky="ew")
+        container_card.columnconfigure(0, weight=1)
 
-        self.file_listbox = tk.Listbox(listbox_frame, height=6, xscrollcommand=x_scrollbar.set)
-        self.file_listbox.pack(side=tk.LEFT, fill=tk.BOTH, expand=True)
-        x_scrollbar.config(command=self.file_listbox.xview)
+        self.workflow_container = ttk.Frame(container_card, style="Card.TFrame")
+        self.workflow_container.grid(row=0, column=0, sticky="ew")
+        self.workflow_container.columnconfigure(0, weight=1)
 
-        # === [2] COMMENT & UNIT TEST GENERATOR ===
-        comment_frame = tk.LabelFrame(
-            frame_input, text="Tạo Comment cho File & Unit Test", bg="lightgray"
+        # --- Card chứa Notebook kết quả ---
+        notebook_card = ttk.Frame(main, style="Card.TFrame")
+        notebook_card.grid(row=1, column=0, sticky="nsew", pady=(8, 0))
+        notebook_card.rowconfigure(0, weight=1)
+        notebook_card.columnconfigure(0, weight=1)
+
+        self.output_notebook = ttk.Notebook(notebook_card)
+        self.output_notebook.grid(row=0, column=0, sticky="nsew")
+
+        # tạo 4 tab kết quả (Log / Self Check Result / Comment & UT / DTO & DB)
+        self.build_output_tabs()
+
+        # === BUILD 3 WORKFLOW FRAMES (giống ui_demo) ===
+        self.selfcheck_tab = SelfCheckTab(
+            parent=self.workflow_container,
+            style=self.style,
+            # action=self.fake_action,
+            # fake_paste_codes=self.fake_paste_codes,
         )
-        comment_frame.grid(row=1, column=0, sticky="ew", pady=10)
-
-        tk.Label(comment_frame, text="Tên tác giả:", bg="lightgray").pack(
-            anchor="center", pady=(5, 0)
+        self.comment_and_unit_test_tab = CommentAndUnitTestTab(
+            parent=self.workflow_container, style=self.style
         )
-        self.author_entry = tk.Entry(comment_frame, width=25)
-        self.author_entry.pack(pady=2, anchor="center")
+        self.dto_and_db_tab = DtoAndDbTab(parent=self.workflow_container, style=self.style)
 
-        tk.Label(comment_frame, text="Mã màn hình:", bg="lightgray").pack(
-            anchor="center", pady=(5, 0)
+        # Ẩn 2 tab còn lại lúc khởi tạo
+        self.comment_and_unit_test_tab.frame.grid_remove()
+        self.dto_and_db_tab.frame.grid_remove()
+
+        # Mặc định hiển thị Self Check
+        self.show_workflow("selfcheck")
+
+    # ------------------------------------------------------------------ #
+    # CHUYỂN GIỮA CÁC WORKFLOW (SELF CHECK / COMMENT / DTO & DB)
+    # ------------------------------------------------------------------ #
+    def show_workflow(self, name):
+        # Ẩn tất cả frame workflow
+        for t in (
+            self.selfcheck_tab,
+            self.comment_and_unit_test_tab,
+            self.dto_and_db_tab,
+        ):
+            t.frame.grid_remove()
+
+        # Hiện đúng frame
+        if name == "selfcheck":
+            self.selfcheck_tab.frame.grid(row=0, column=0, sticky="nsew")
+            # nếu bạn có status_var thì set, còn không thì bỏ dòng này đi
+            # self.status_var.set("Workflow: Self Check")
+        elif name == "comment":
+            self.comment_and_unit_test_tab.frame.grid(row=0, column=0, sticky="nsew")
+            # self.status_var.set("Workflow: Comment & Unit Test")
+        elif name == "devtools":
+            self.dto_and_db_tab.frame.grid(row=0, column=0, sticky="nsew")
+            # self.status_var.set("Workflow: DTO & DB Tools")
+
+        # Cập nhật màu sidebar
+        self._set_sidebar_active(name)
+
+    def _set_sidebar_active(self, active_name: str):
+        """Đổi màu nút sidebar theo workflow đang chọn (giống ui_demo)."""
+        normal_bg = SIDEBAR_BG
+        normal_fg = "#e5e7eb"
+        active_bg = PRIMARY_COLOR
+        active_fg = "#ffffff"
+
+        buttons = [
+            ("selfcheck", self.btn_sc),
+            ("comment", self.btn_cm),
+            ("devtools", self.btn_dev),
+        ]
+
+        for name, btn in buttons:
+            if name == active_name:
+                btn.configure(
+                    bg=active_bg,
+                    fg=active_fg,
+                    # font=("Segoe UI", 9, "bold"),
+                )
+            else:
+                btn.configure(
+                    bg=normal_bg,
+                    fg=normal_fg,
+                    # font=("Segoe UI", 9),
+                )
+
+    # ------------------------------------------------------------------ #
+    # OUTPUT NOTEBOOK
+    # ------------------------------------------------------------------ #
+    def build_output_tabs(self):
+        # Tab Log
+        tab_log = ttk.Frame(self.output_notebook)
+        self.output_notebook.add(tab_log, text="Log")
+
+        self.log_text = scrolledtext.ScrolledText(
+            tab_log, wrap=tk.WORD, borderwidth=0, background="#ffffff"
         )
-        self.screen_code_entry = tk.Entry(comment_frame, width=25)
-        self.screen_code_entry.pack(pady=2, anchor="center")
+        self.log_text.pack(fill="both", expand=True)
 
-        tk.Label(comment_frame, text="Chọn ngày:", bg="lightgray").pack(
-            anchor="center", pady=(5, 0)
+        # Tab Self Check Result
+        tab_sc = ttk.Frame(self.output_notebook)
+        self.output_notebook.add(tab_sc, text="Self Check Result")
+
+        self.sc_result_text = scrolledtext.ScrolledText(
+            tab_sc, wrap=tk.WORD, borderwidth=0, background="#ffffff"
         )
-        self.date_entry = DateEntry(
-            comment_frame,
-            background="darkblue",
-            foreground="white",
-            borderwidth=2,
-            date_pattern="yyyy/mm/dd",
-            width=22,
+        self.sc_result_text.pack(fill="both", expand=True)
+
+        # Tab Comment & UT
+        tab_cm = ttk.Frame(self.output_notebook)
+        self.output_notebook.add(tab_cm, text="Comment & Unit Test")
+
+        self.cm_result_text = scrolledtext.ScrolledText(
+            tab_cm, wrap=tk.WORD, borderwidth=0, background="#ffffff"
         )
-        self.date_entry.pack(pady=2, anchor="center")
+        self.cm_result_text.pack(fill="both", expand=True)
 
-        tk.Button(
-            comment_frame,
-            text="Tạo Comment",
-            command=lambda: generate_comment(self),
-            width=25,
-        ).pack(pady=(5, 2), anchor="center")
+        # Tab DTO / DB
+        tab_dev = ttk.Frame(self.output_notebook)
+        self.output_notebook.add(tab_dev, text="DTO / DB")
 
-        tk.Button(
-            comment_frame,
-            text="Sinh Unit Test (Dialog)",
-            command=self.check_and_open_unittest_dialog,
-            width=25,
-        ).pack(pady=(0, 5), anchor="center")
-
-        # === [3] FILE CHỌN & DTO === (di chuyển xuống cuối)
-        file_frame = tk.LabelFrame(frame_input, text="Chọn File & Tạo DTO", bg="lightgray")
-        file_frame.grid(row=2, column=0, sticky="ew", pady=(0, 10))
-
-        self.file_path = None
-        self.file_path_label = tk.Label(file_frame, text="Chưa chọn file", bg="lightgray")
-        self.file_path_label.pack(pady=5, anchor="center")
-
-        tk.Button(
-            file_frame,
-            text="Chọn File Excel",
-            command=lambda: select_file(self),
-            width=25,
-        ).pack(pady=2, anchor="center")
-
-        tk.Button(
-            file_frame,
-            text="Generate DTO",
-            command=lambda: generated_dto(self),
-            width=25,
-        ).pack(pady=2, anchor="center")
-
-        # === [4] NÚT KHỞI TẠO DB ===
-        init_db_frame = tk.LabelFrame(frame_input, text="Khởi tạo Cơ sở dữ liệu", bg="lightgray")
-        init_db_frame.grid(row=3, column=0, sticky="ew", pady=(0, 10))
-
-        tk.Button(
-            init_db_frame,
-            text="Khởi tạo DB",
-            command=lambda: run_database_initialization(self),
-            width=25,
-        ).pack(pady=5, anchor="center")
-
-        tk.Button(
-            init_db_frame,
-            text="Tạo Data từ thư mục SQL",
-            command=lambda: run_sql_from_folder(self),
-            width=25,
-        ).pack(pady=(0, 5), anchor="center")
-
-        # === OUTPUT TEXT ===
-        self.output_text = scrolledtext.ScrolledText(frame_output, wrap=tk.WORD)
-        self.output_text.grid(row=0, column=0, sticky="nsew")
+        self.dev_result_text = scrolledtext.ScrolledText(
+            tab_dev, wrap=tk.WORD, borderwidth=0, background="#ffffff"
+        )
+        self.dev_result_text.pack(fill="both", expand=True)
 
     def check_and_open_unittest_dialog(self):
         screen_code = self.screen_code_entry.get().strip()
@@ -486,3 +504,24 @@ class BackEndTab:
             ws.column_dimensions[col_letter].width = min(width + 2, max_width)
 
         wb.save(path_xlsx)
+
+    def _set_sidebar_active(self, active_name: str):
+        """Đổi màu nút sidebar theo mục đang chọn (chỉ highlight, chưa ẩn/hiện nội dung)."""
+        self.workflow_var.set(active_name)
+
+        normal_bg = SIDEBAR_BG
+        normal_fg = "#e5e7eb"
+        active_bg = PRIMARY_COLOR
+        active_fg = "#ffffff"
+
+        buttons = [
+            ("selfcheck", self.btn_sc),
+            ("comment", self.btn_cm),
+            ("devtools", self.btn_dev),
+        ]
+
+        for name, btn in buttons:
+            if name == active_name:
+                btn.configure(bg=active_bg, fg=active_fg, font=("Segoe UI", 9, "bold"))
+            else:
+                btn.configure(bg=normal_bg, fg=normal_fg, font=("Segoe UI", 9))
