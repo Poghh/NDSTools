@@ -231,7 +231,9 @@ class BackEndTab:
         """Chọn thư mục chứa các file Self Check, lọc theo mã GUI trong ô văn bản và xử lý từng file Excel."""
         # 1️⃣ Lấy danh sách mã GUIxxxxx từ vùng văn bản
         raw = self.screen_codes_text.get("1.0", tk.END)
-        found = re.findall(r"GUI\d{5}", raw, flags=re.IGNORECASE)
+        found = re.findall(
+            r"(?<![A-Za-z0-9])(GUI\d{5}|[A-Z][A-Z0-9]{5})(?![A-Za-z0-9])", raw, flags=re.IGNORECASE
+        )
 
         seen = set()
         self.screen_codes = []
@@ -243,7 +245,7 @@ class BackEndTab:
         if not self.screen_codes:
             messagebox.showinfo(
                 "Chưa có danh sách mã",
-                "Vui lòng dán danh sách mã (mỗi dòng 1 mã dạng GUIxxxxx) vào ô phía trên trước khi chọn thư mục.",
+                "Vui lòng dán danh sách mã (mỗi dòng 1 mã) vào ô phía trên trước khi chọn thư mục.",
             )
             return
 
@@ -269,7 +271,7 @@ class BackEndTab:
             )
             return
 
-        # 4️⃣ Lọc file có chứa mã GUIxxxxx
+        # 4️⃣ Lọc file có chứa mã
         matched_files = []
         for f in all_files:
             fu = f.upper()
@@ -285,34 +287,45 @@ class BackEndTab:
         # 5️⃣ Lưu danh sách vào biến instance
         self.self_check_files = matched_files
 
-        # 7️⃣ GỌI XỬ LÝ CHO TỪNG FILE SELF CHECK
-
+        # 6️⃣ Clear listbox (danh sách file .java sẽ được append từ nhiều file self-check)
         self.file_listbox.delete(0, tk.END)
 
+        # 7️⃣ Gọi process_selfcheck_excel cho từng file self-check
         for path in self.self_check_files:
             try:
                 process_selfcheck_excel(
                     file_path=path,
                     label_widget=self.self_check_label,
-                    listbox_widget=self.file_listbox,  # <<< SỬA Ở ĐÂY
+                    listbox_widget=self.file_listbox,
                     screen_code_entry=self.screen_code_entry,
                     author_entry=self.author_entry,
-                    clear_listbox=False,
+                    clear_listbox=False,  # rất quan trọng: giữ lại các file đã add trước đó
                 )
             except Exception as e:
-                # nếu vẫn muốn log lỗi ra vùng text:
                 self.output_text.insert(
                     tk.END, f"\n⚠️ Lỗi khi xử lý {os.path.basename(path)}: {e}\n"
                 )
 
+        # 8️⃣ Sau khi đã có đầy đủ danh sách file .java trong listbox, gọi count_code
+        try:
+            total_code, total_blank, total_comment = count_code(
+                listbox_widget=self.file_listbox,
+                output_widget=self.output_text,
+            )
+            # (count_code đã tự xóa nội dung output_widget trước khi ghi)
+            self.output_text.insert(
+                tk.END,
+                f"\n==== SUMMARY FROM FOLDER ====\n"
+                f"📂 Thư mục: {folder_path}\n"
+                f"🧾 Code: {total_code}, ␣ Blank: {total_blank}, 🗒️ Comment: {total_comment}\n",
+            )
+        except Exception as e:
+            self.output_text.insert(
+                tk.END,
+                f"\n⚠️ Lỗi khi đếm dòng code từ danh sách file: {e}\n",
+            )
+
     def export_selfcheck_report(self):
-        """
-        Duyệt self.self_check_files:
-        - trích 'Màn hình' từ tên file (GUIxxxxx phần giữa)
-        - lấy danh sách source từ sheet '機能別ソース一覧' (trạng thái 新規)
-        - đếm tổng Dòng code / Dòng trắng / Dòng comment của toàn bộ source đó
-        - ghi ra CSV với header: Màn hình | File self-check | Số file | Dòng code | Dòng trắng | Dòng comment
-        """
         if not getattr(self, "self_check_files", None):
             messagebox.showwarning(
                 "Thiếu dữ liệu",
@@ -324,7 +337,7 @@ class BackEndTab:
         for sc_path in self.self_check_files:
             base = os.path.basename(sc_path)
 
-            # trích mã màn hình từ tên file: 実装セルフチェックリスト_GUI00634_xxx.xlsx
+            # trích mã màn hình từ tên file
             screen = ""
             parts = base.split("_")
             for p in parts:
@@ -333,19 +346,43 @@ class BackEndTab:
                     screen = up[:8]  # GUI + 5 số
                     break
 
-            sources = self._get_sources_from_selfcheck(sc_path)
-            total_code = total_blank = total_cmt = 0
+            # 🔹 Lấy danh sách source .java 状態=新規 bằng process_selfcheck_excel
+            sources = process_selfcheck_excel(
+                file_path=sc_path,
+                label_widget=self.self_check_label,  # hoặc 1 label khác nếu bạn muốn
+                listbox_widget=self.file_listbox,  # có thể là listbox UI thật
+                screen_code_entry=self.screen_code_entry,
+                author_entry=self.author_entry,
+                clear_listbox=False,  # rất quan trọng: không xóa listbox UI
+            )
 
+            if not sources:
+                # Không có file .java 新規 → vẫn ghi dòng với 0
+                rows.append(
+                    {
+                        "Màn hình": screen,
+                        "File self-check": base,
+                        "Số file": 0,
+                        "Dòng code": 0,
+                        "Dòng trắng": 0,
+                        "Dòng comment": 0,
+                    }
+                )
+                continue
+
+            # 🔹 Tạo Listbox tạm chỉ để feed count_code
+            temp_listbox = tk.Listbox()
             for src in sources:
-                # convert slash nếu đường dẫn trong file dùng '/'
-                src_norm = src.replace("/", os.sep)
-                if not os.path.isabs(src_norm):
-                    # nếu là path tương đối trong repo, bạn có thể prepend root ở đây nếu cần
-                    pass
-                c, b, cm = self._count_lines_in_file(src_norm)
-                total_code += c
-                total_blank += b
-                total_cmt += cm
+                temp_listbox.insert(tk.END, src)
+
+            # 🔹 Text tạm – không gán parent để tránh attribute error
+            temp_output = tk.Text()
+
+            # Sử dụng count_code
+            total_code, total_blank, total_comment = count_code(
+                listbox_widget=temp_listbox,
+                output_widget=temp_output,
+            )
 
             rows.append(
                 {
@@ -354,7 +391,7 @@ class BackEndTab:
                     "Số file": len(sources),
                     "Dòng code": total_code,
                     "Dòng trắng": total_blank,
-                    "Dòng comment": total_cmt,
+                    "Dòng comment": total_comment,
                 }
             )
 
@@ -362,7 +399,6 @@ class BackEndTab:
             messagebox.showwarning("Không có dữ liệu", "Không tạo được dòng nào để xuất.")
             return
 
-        # --- tạo DataFrame trước như bạn đang làm ---
         df = pd.DataFrame(
             rows,
             columns=[
@@ -375,100 +411,19 @@ class BackEndTab:
             ],
         )
 
-        # --- hỏi nơi lưu: ƯU TIÊN .xlsx ---
         save_path = filedialog.asksaveasfilename(
             title="Lưu báo cáo",
             defaultextension=".xlsx",
-            filetypes=[("Excel file", "*.xlsx")],  # chỉ cho chọn Excel để tránh lẫn sang CSV
+            filetypes=[("Excel file", "*.xlsx")],
             initialfile="selfcheck_report.xlsx",
         )
         if not save_path:
             return
 
-        # --- luôn ghi .xlsx ---
         df.to_excel(save_path, index=False)
-        self._style_xlsx(save_path, df)  # kẻ bảng + format đẹp
+        self._style_xlsx(save_path, df)
 
         messagebox.showinfo("Hoàn tất", f"Đã xuất báo cáo: {save_path}")
-
-    def _get_sources_from_selfcheck(self, file_path: str):
-        """
-        Đọc sheet '機能別ソース一覧' và lấy các đường dẫn file (cột 2) với trạng thái '新規' (cột 3).
-        Trả về: list[str] đường dẫn.
-        """
-        try:
-            df = pd.read_excel(file_path, sheet_name="機能別ソース一覧", header=None)
-        except Exception:
-            return []
-
-        results = []
-        for _, row in df.iterrows():
-            if str(row[3]).strip() == "新規" and pd.notna(row[2]):
-                results.append(str(row[2]).strip())
-        return results
-
-    def _count_lines_in_file(self, path: str):
-        """
-        Trả về (code_lines, blank_lines, comment_lines) cho 1 file text (vd .java).
-        """
-        code = blank = comment = 0
-        in_block = False
-        try:
-            with open(path, encoding="utf-8", errors="ignore") as f:
-                for raw in f:
-                    line = raw.rstrip("\n")
-                    s = line.strip()
-
-                    if not s:
-                        blank += 1
-                        continue
-
-                    i = 0
-                    while i < len(s):
-                        if in_block:
-                            end = s.find("*/", i)
-                            if end == -1:
-                                comment += 1
-                                break
-                            else:
-                                in_block = False
-                                rest = s[end + 2 :].strip()
-                                if not rest:
-                                    comment += 1
-                                    break
-                                else:
-                                    s = rest
-                                    i = 0
-                                    continue
-                        else:
-                            if s.startswith("//", i):
-                                comment += 1
-                                break
-                            start = s.find("/*", i)
-                            start_sl = s.find("//", i)
-
-                            if start_sl != -1 and (start == -1 or start_sl < start):
-                                comment += 1
-                                break
-                            if start != -1:
-                                end = s.find("*/", start + 2)
-                                if end == -1:
-                                    in_block = True
-                                    comment += 1
-                                    break
-                                else:
-                                    s = (s[:start] + s[end + 2 :]).strip()
-                                    if not s:
-                                        comment += 1
-                                        break
-                                    else:
-                                        i = 0
-                                        continue
-                            code += 1
-                            break
-            return code, blank, comment
-        except Exception:
-            return 0, 0, 0
 
     def _style_xlsx(self, path_xlsx: str, df: pd.DataFrame):
         """Định dạng file .xlsx: header đậm, auto-filter, freeze, căn lề, #,##0, auto-width."""

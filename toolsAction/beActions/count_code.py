@@ -118,3 +118,4 @@ def count_code(listbox_widget, output_widget):
     output_widget.insert(tk.END, f"🧾 Total Code Lines: {total_code_lines}\n")
     output_widget.insert(tk.END, f"🗒️ Total Comment Lines: {total_comment_lines}\n")
     output_widget.insert(tk.END, f"␣ Total Blank Lines: {total_blank_lines}\n")
+    return total_code_lines, total_blank_lines, total_comment_lines
