@@ -75,9 +75,7 @@ def check_english_comments_main(app):
             results = check_english_comments(file_path)
             if any("" in result for result in results):
                 found_english = True
-                app.output_text.insert(
-                    tk.END, f"\n {os.path.basename(file_path)}:\n", "highlight"
-                )
+                app.output_text.insert(tk.END, f"\n {os.path.basename(file_path)}:\n", "highlight")
                 for result in results:
                     tag = "warning" if "" in result else "success"
                     app.output_text.insert(tk.END, f"{result}\n", tag)

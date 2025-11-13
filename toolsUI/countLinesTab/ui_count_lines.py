@@ -11,12 +11,12 @@ class CountLinesTab:
     def __init__(self, tab_parent):
         self.tab = ttk.Frame(tab_parent, style="Custom.TFrame")
         tab_parent.add(self.tab, text="Count Lines")
-        
+
         self.folder_path = ""
         self.running = False
         self.results_data = []  # Lưu kết quả tổng hợp màn hình để export excel
         self.file_details_data = []  # Lưu chi tiết từng file để export excel
-        
+
         self.init_ui()
 
     def init_ui(self):
@@ -113,8 +113,8 @@ class CountLinesTab:
 
         # Enable drag and drop for screen input
         try:
-            drop_register = getattr(self.screen_input, 'drop_target_register', None)
-            dnd_bind = getattr(self.screen_input, 'dnd_bind', None)
+            drop_register = getattr(self.screen_input, "drop_target_register", None)
+            dnd_bind = getattr(self.screen_input, "dnd_bind", None)
             if drop_register and dnd_bind:
                 drop_register(DND_FILES)
                 dnd_bind("<<Drop>>", self.handle_screen_drop)
@@ -241,7 +241,7 @@ class CountLinesTab:
     def start_count_lines(self):
         if self.running:
             return
-        
+
         screen_names_text = self.screen_input.get("1.0", tk.END).strip()
         if not screen_names_text:
             self.output_text.insert(tk.END, "Vui lòng nhập danh sách màn hình\n")
@@ -256,7 +256,7 @@ class CountLinesTab:
         self.count_btn.config(state=tk.DISABLED)
         self.progress.pack(side=tk.LEFT, padx=(16, 0))
         self.progress.start()
-        
+
         threading.Thread(target=self._count_lines_thread, daemon=True).start()
 
     def _count_lines_thread(self):
@@ -277,23 +277,27 @@ class CountLinesTab:
         self.file_details_data = []
 
         for screen_name in screen_names:
-            self.output_text.insert(tk.END, f"\n{'='*60}\n")
+            self.output_text.insert(tk.END, f"\n{'=' * 60}\n")
             self.output_text.insert(tk.END, f"Màn hình: {screen_name}\n")
             self.output_text.update()
 
             # Tìm file self-check tương ứng
             excel_file = self.find_selfcheck_file(screen_name)
             if not excel_file:
-                self.output_text.insert(tk.END, f"Không tìm thấy file self-check cho màn hình: {screen_name}\n")
+                self.output_text.insert(
+                    tk.END, f"Không tìm thấy file self-check cho màn hình: {screen_name}\n"
+                )
                 # Lưu kết quả lỗi
-                self.results_data.append({
-                    "Màn hình": screen_name,
-                    "File self-check": "Không tìm thấy",
-                    "Số file": 0,
-                    "Dòng code": 0,
-                    "Dòng trắng": 0,
-                    "Dòng comment": 0,
-                })
+                self.results_data.append(
+                    {
+                        "Màn hình": screen_name,
+                        "File self-check": "Không tìm thấy",
+                        "Số file": 0,
+                        "Dòng code": 0,
+                        "Dòng trắng": 0,
+                        "Dòng comment": 0,
+                    }
+                )
                 continue
 
             excel_filename = os.path.basename(excel_file)
@@ -302,16 +306,18 @@ class CountLinesTab:
             # Đọc file self-check và lấy các path
             file_paths = self.extract_paths_from_selfcheck(excel_file)
             if not file_paths:
-                self.output_text.insert(tk.END, f"Không tìm thấy path nào có trạng thái '新規'\n")
+                self.output_text.insert(tk.END, "Không tìm thấy path nào có trạng thái '新規'\n")
                 # Lưu kết quả không có file
-                self.results_data.append({
-                    "Màn hình": screen_name,
-                    "File self-check": excel_filename,
-                    "Số file": 0,
-                    "Dòng code": 0,
-                    "Dòng trắng": 0,
-                    "Dòng comment": 0,
-                })
+                self.results_data.append(
+                    {
+                        "Màn hình": screen_name,
+                        "File self-check": excel_filename,
+                        "Số file": 0,
+                        "Dòng code": 0,
+                        "Dòng trắng": 0,
+                        "Dòng comment": 0,
+                    }
+                )
                 continue
 
             self.output_text.insert(tk.END, f"Tìm thấy {len(file_paths)} file\n")
@@ -333,20 +339,22 @@ class CountLinesTab:
 
                 # Lưu chi tiết từng file (luôn lưu để export Excel)
                 file_name = os.path.basename(file_path) if os.path.exists(file_path) else file_path
-                self.file_details_data.append({
-                    "Màn hình": screen_name,
-                    "File path": file_path,
-                    "Tên file": file_name,
-                    "Dòng code": code,
-                    "Dòng trắng": blank,
-                    "Dòng comment": comment,
-                })
+                self.file_details_data.append(
+                    {
+                        "Màn hình": screen_name,
+                        "File path": file_path,
+                        "Tên file": file_name,
+                        "Dòng code": code,
+                        "Dòng trắng": blank,
+                        "Dòng comment": comment,
+                    }
+                )
 
                 # Hiển thị chi tiết từng file (chỉ khi checkbox được chọn)
                 if show_details:
                     self.output_text.insert(
                         tk.END,
-                        f"  {file_name}: {code} dòng code, {blank} dòng trắng, {comment} dòng comment\n"
+                        f"  {file_name}: {code} dòng code, {blank} dòng trắng, {comment} dòng comment\n",
                     )
                     self.output_text.update()
 
@@ -355,18 +363,20 @@ class CountLinesTab:
                 self.output_text.insert(tk.END, "\n")
 
             # Lưu kết quả tổng hợp
-            self.results_data.append({
-                "Màn hình": screen_name,
-                "File self-check": excel_filename,
-                "Số file": len(file_paths),
-                "Dòng code": screen_code,
-                "Dòng trắng": screen_blank,
-                "Dòng comment": screen_comment,
-            })
+            self.results_data.append(
+                {
+                    "Màn hình": screen_name,
+                    "File self-check": excel_filename,
+                    "Số file": len(file_paths),
+                    "Dòng code": screen_code,
+                    "Dòng trắng": screen_blank,
+                    "Dòng comment": screen_comment,
+                }
+            )
 
             self.output_text.insert(
                 tk.END,
-                f"\n{screen_name}: {screen_code} dòng code, {screen_blank} dòng trắng, {screen_comment} dòng comment\n"
+                f"\n{screen_name}: {screen_code} dòng code, {screen_blank} dòng trắng, {screen_comment} dòng comment\n",
             )
             self.output_text.update()
 
@@ -382,7 +392,9 @@ class CountLinesTab:
             for file in files:
                 if file.lower().endswith((".xlsx", ".xls")):
                     # Kiểm tra nếu tên màn hình có trong tên file
-                    if screen_name.lower() in file.lower() or file.lower().startswith(screen_name.lower()):
+                    if screen_name.lower() in file.lower() or file.lower().startswith(
+                        screen_name.lower()
+                    ):
                         return os.path.join(root, file)
 
         return None
@@ -432,7 +444,7 @@ class CountLinesTab:
                 else:
                     code_count += 1
 
-        except Exception as e:
+        except Exception:
             # Nếu không đọc được file, bỏ qua
             pass
 
@@ -441,7 +453,9 @@ class CountLinesTab:
     def export_to_excel(self):
         """Export kết quả ra file Excel"""
         if not self.results_data:
-            self.output_text.insert(tk.END, "Không có dữ liệu để export. Vui lòng chạy đếm dòng trước.\n")
+            self.output_text.insert(
+                tk.END, "Không có dữ liệu để export. Vui lòng chạy đếm dòng trước.\n"
+            )
             return
 
         # Chọn nơi lưu file
@@ -470,6 +484,7 @@ class CountLinesTab:
 
                 # Format cột cho sheet tổng hợp
                 from openpyxl.utils import get_column_letter
+
                 worksheet_summary = writer.sheets["Tổng hợp màn hình"]
                 for idx, col in enumerate(df_summary.columns, 1):
                     col_letter = get_column_letter(idx)
@@ -479,7 +494,7 @@ class CountLinesTab:
                 if self.file_details_data:
                     df_details = pd.DataFrame(self.file_details_data)
                     worksheet_details = writer.sheets["Chi tiết từng file"]
-                    
+
                     # Format độ rộng cột
                     for idx, col in enumerate(df_details.columns, 1):
                         col_letter = get_column_letter(idx)
@@ -487,19 +502,22 @@ class CountLinesTab:
                             worksheet_details.column_dimensions[col_letter].width = 50
                         else:
                             worksheet_details.column_dimensions[col_letter].width = 30
-                    
+
                     # Merge cột "Màn hình" khi có cùng giá trị
                     from openpyxl.styles import Alignment, Border, Side
-                    screen_col_idx = df_details.columns.get_loc("Màn hình") + 1  # +1 vì Excel bắt đầu từ 1
+
+                    screen_col_idx = (
+                        df_details.columns.get_loc("Màn hình") + 1
+                    )  # +1 vì Excel bắt đầu từ 1
                     screen_col_letter = get_column_letter(screen_col_idx)
-                    
+
                     current_screen = None
                     start_row = 2  # Bắt đầu từ dòng 2 (dòng 1 là header)
-                    
+
                     for row_idx, (_, row) in enumerate(df_details.iterrows(), start=0):
                         screen = row["Màn hình"]
                         excel_row = row_idx + 2  # +2 vì Excel bắt đầu từ 1 và có header
-                        
+
                         if current_screen != screen:
                             # Nếu có nhóm trước đó, merge nó
                             if current_screen is not None and start_row < excel_row:
@@ -511,17 +529,17 @@ class CountLinesTab:
                                 cell.alignment = Alignment(horizontal="center", vertical="center")
                                 # Thêm border
                                 thin_border = Border(
-                                    left=Side(style='thin'),
-                                    right=Side(style='thin'),
-                                    top=Side(style='thin'),
-                                    bottom=Side(style='thin')
+                                    left=Side(style="thin"),
+                                    right=Side(style="thin"),
+                                    top=Side(style="thin"),
+                                    bottom=Side(style="thin"),
                                 )
                                 cell.border = thin_border
-                            
+
                             # Bắt đầu nhóm mới
                             current_screen = screen
                             start_row = excel_row
-                    
+
                     # Merge nhóm cuối cùng
                     if current_screen is not None:
                         end_row = len(df_details) + 1
@@ -532,14 +550,13 @@ class CountLinesTab:
                             cell = worksheet_details[f"{screen_col_letter}{start_row}"]
                             cell.alignment = Alignment(horizontal="center", vertical="center")
                             thin_border = Border(
-                                left=Side(style='thin'),
-                                right=Side(style='thin'),
-                                top=Side(style='thin'),
-                                bottom=Side(style='thin')
+                                left=Side(style="thin"),
+                                right=Side(style="thin"),
+                                top=Side(style="thin"),
+                                bottom=Side(style="thin"),
                             )
                             cell.border = thin_border
 
             self.output_text.insert(tk.END, f"\nĐã export kết quả ra file: {file_path}\n")
         except Exception as e:
             self.output_text.insert(tk.END, f"Lỗi khi export Excel: {str(e)}\n")
-

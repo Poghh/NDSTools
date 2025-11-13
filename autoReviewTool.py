@@ -8,11 +8,11 @@ from watchdog.events import FileSystemEventHandler
 from watchdog.observers import Observer
 
 from toolsUI.beTab.ui_be import BackEndTab
-from toolsUI.feTab.ui_fe_new_version import FrontEndTab
-from toolsUI.utTab.ui_ut import UnitTestTab
-from toolsUI.eslintAllTab.ui_eslint_all import EslintAllTab
-from toolsUI.formatExcelTab.ui_format_excel import FormatExcelTab
 from toolsUI.countLinesTab.ui_count_lines import CountLinesTab
+from toolsUI.eslintAllTab.ui_eslint_all import EslintAllTab
+from toolsUI.feTab.ui_fe_new_version import FrontEndTab
+from toolsUI.formatExcelTab.ui_format_excel import FormatExcelTab
+from toolsUI.utTab.ui_ut import UnitTestTab
 
 if "--watch" in sys.argv:
 
@@ -78,7 +78,6 @@ else:
 
             # Tab Count Lines
             self.count_lines_tab = CountLinesTab(self.tab_parent)
-
 
     if __name__ == "__main__":
         root = TkinterDnD.Tk()

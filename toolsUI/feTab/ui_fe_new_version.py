@@ -5,7 +5,7 @@ from tkinter import filedialog, scrolledtext, ttk
 
 import pandas as pd
 from PIL import Image, ImageTk
-from tkinterdnd2 import DND_FILES, TkinterDnD
+from tkinterdnd2 import DND_FILES
 
 from toolsAction.feActions.console_checker import check_console_log
 from toolsAction.feActions.css_checker import check_css_color_main
@@ -134,8 +134,8 @@ class FrontEndTab:
         # Enable drag and drop functionality
         try:
             # Use getattr to safely check for drag-and-drop methods
-            drop_register = getattr(self.path_input, 'drop_target_register', None)
-            dnd_bind = getattr(self.path_input, 'dnd_bind', None)
+            drop_register = getattr(self.path_input, "drop_target_register", None)
+            dnd_bind = getattr(self.path_input, "dnd_bind", None)
             if drop_register and dnd_bind:
                 drop_register(DND_FILES)
                 dnd_bind("<<Drop>>", self.handle_drop)
@@ -208,8 +208,8 @@ class FrontEndTab:
         # Enable drag and drop functionality
         try:
             # Use getattr to safely check for drag-and-drop methods
-            drop_register = getattr(self.excel_output, 'drop_target_register', None)
-            dnd_bind = getattr(self.excel_output, 'dnd_bind', None)
+            drop_register = getattr(self.excel_output, "drop_target_register", None)
+            dnd_bind = getattr(self.excel_output, "dnd_bind", None)
             if drop_register and dnd_bind:
                 drop_register(DND_FILES)
                 dnd_bind("<<Drop>>", self.handle_docs_drop)
@@ -592,11 +592,7 @@ class FrontEndTab:
 
     def display_output(self, text):
         for line in text.splitlines():
-            tag = (
-                "error"
-                if any(keyword in line.lower() for keyword in ["error", "", ""])
-                else None
-            )
+            tag = "error" if any(keyword in line.lower() for keyword in ["error", "", ""]) else None
             # Fix text widget tag insertion - only pass tag if it's not None
             if tag:
                 self.output_text.insert(tk.END, line + "\n", tag)

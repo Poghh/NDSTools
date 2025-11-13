@@ -97,9 +97,7 @@ def check_hardcoded_values_main(app):
                         app.output_text.insert(tk.END, f"{result}\n", "warning")
 
         if not found_issues:
-            app.output_text.insert(
-                tk.END, " No hardcoded values found in comparisons\n", "success"
-            )
+            app.output_text.insert(tk.END, " No hardcoded values found in comparisons\n", "success")
 
     finally:
         app.set_running_state(False)

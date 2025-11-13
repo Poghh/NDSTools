@@ -42,14 +42,16 @@ def count_lines(self):
             total_comment += comment_count
             total_blank += blank_count
             self.output_text.insert(
-                tk.END, f" {code_count} dòng code, {blank_count} dòng trắng, {comment_count} dòng comment\n"
+                tk.END,
+                f" {code_count} dòng code, {blank_count} dòng trắng, {comment_count} dòng comment\n",
             )
 
         except Exception as e:
             self.output_text.insert(tk.END, f" Lỗi đọc file: {str(e)}\n", "error")
 
     self.output_text.insert(
-        tk.END, f"\n TỔNG: {total_code} dòng code, {total_blank} dòng trắng, {total_comment} dòng comment\n"
+        tk.END,
+        f"\n TỔNG: {total_code} dòng code, {total_blank} dòng trắng, {total_comment} dòng comment\n",
     )
     self.output_text.insert(
         tk.END,
