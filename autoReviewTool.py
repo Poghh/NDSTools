@@ -8,6 +8,7 @@ from watchdog.events import FileSystemEventHandler
 from watchdog.observers import Observer
 
 from toolsUI.beTab.ui_be import BackEndTab
+from toolsUI.carebaseTab.ui_carebase import CareBaseTab
 from toolsUI.countLinesTab.ui_count_lines import CountLinesTab
 from toolsUI.eslintAllTab.ui_eslint_all import EslintAllTab
 from toolsUI.feTab.ui_fe_new_version import FrontEndTab
@@ -78,6 +79,9 @@ else:
 
             # Tab Count Lines
             self.count_lines_tab = CountLinesTab(self.tab_parent)
+
+            # Tab Handle CareBase Issues
+            self.carebase_tab = CareBaseTab(self.tab_parent)
 
     if __name__ == "__main__":
         root = TkinterDnD.Tk()
