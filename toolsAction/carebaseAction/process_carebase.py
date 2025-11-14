@@ -331,6 +331,28 @@ def process_carebase_data(df: pd.DataFrame, output_callback=None):
         else:
             author_value = ""
         
+        # Lấy giá trị từ cột "Start date" -> Ngày phát sinh
+        start_date = row.get("Start date", "")
+        if pd.notna(start_date):
+            # Chuyển đổi date thành string nếu cần
+            if isinstance(start_date, pd.Timestamp):
+                start_date = start_date.strftime("%Y-%m-%d")
+            else:
+                start_date = str(start_date).strip()
+        else:
+            start_date = ""
+        
+        # Lấy giá trị từ cột "Due date" -> Ngày done mong muốn
+        due_date = row.get("Due date", "")
+        if pd.notna(due_date):
+            # Chuyển đổi date thành string nếu cần
+            if isinstance(due_date, pd.Timestamp):
+                due_date = due_date.strftime("%Y-%m-%d")
+            else:
+                due_date = str(due_date).strip()
+        else:
+            due_date = ""
+        
         # Trích xuất giá trị trong ngoặc vuông thứ 3 -> STEP
         step_value = extract_third_bracket_value(subject_value)
         
@@ -366,6 +388,18 @@ def process_carebase_data(df: pd.DataFrame, output_callback=None):
         
         # Người tạo từ cột Author
         output_row["Người tạo"] = author_value
+        
+        # Ngày phát sinh từ cột Start date
+        output_row["Ngày phát sinh"] = start_date
+        
+        # Ngày done mong muốn từ cột Due date
+        output_row["Ngày done mong muốn"] = due_date
+        
+        # Người check từ cột Author (cùng format như Người tạo)
+        output_row["Người check"] = author_value
+        
+        # Ngày check từ cột Due date
+        output_row["Ngày check"] = due_date
         
         output_rows.append(output_row)
         
