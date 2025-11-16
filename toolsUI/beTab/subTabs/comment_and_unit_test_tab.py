@@ -1,5 +1,7 @@
 import tkinter as tk
-from tkinter import ttk
+from tkinter import messagebox, ttk
+
+from toolsUI.beTab.unit_test_generater_dialog import UnitTestDialog
 
 
 class CommentAndUnitTestTab:
@@ -66,3 +68,14 @@ class CommentAndUnitTestTab:
             style="Borderless.TButton",
             command=lambda: self.fake_action("Sinh Unit Test (Dialog)", "cm"),
         ).pack(side="left", padx=5)
+
+    def check_and_open_unittest_dialog(self):
+        screen_code = self.screen_code_entry.get().strip()
+
+        if not screen_code:
+            messagebox.showwarning(
+                "Thiếu thông tin", "Vui lòng nhập đầy đủ Tên tác giả và Mã màn hình."
+            )
+            return
+
+        UnitTestDialog(self.tab, screen_code=screen_code)
